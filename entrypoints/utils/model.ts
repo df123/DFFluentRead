@@ -34,6 +34,8 @@ export class Config {
     count: number;  // 翻译次数
     theme: string;  // 主题模式：'auto' | 'light' | 'dark'
     useCache: boolean; // 是否使用缓存
+    contextMenuService: string = 'deepl'; // 默认使用 deepl 作为右键翻译服务
+    contextMenuHotkey: string = 'Alt'; // 默认使用 Alt 键作为右键翻译的快捷键
 
     constructor() {
         this.on = true;

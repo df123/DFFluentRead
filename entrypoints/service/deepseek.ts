@@ -5,17 +5,22 @@ import { contentPostHandler } from "@/entrypoints/utils/check";
 
 async function deepseek(message: any) {
     try {
+        console.log('deepseek:', message);
+        console.log('deepseek config:', config);
+        console.log('是否右键翻译:', message.isContextMenu);
+
         const headers = new Headers({
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${config.token[config.service]}`
+            'Authorization': `Bearer ${config.token[message.service || config.service]}`
         });
 
-        const url = config.proxy[config.service] || urls[config.service];
+        const url = config.proxy[message.service || config.service] || urls[message.service || config.service];
+        const { template, trainingData } = deepseekMsgTemplate(message.origin, message.isContextMenu);
 
         const resp = await fetch(url, {
             method: method.POST,
             headers,
-            body: deepseekMsgTemplate(message.origin)
+            body: template
         });
 
         if (!resp.ok) {
@@ -23,7 +28,17 @@ async function deepseek(message: any) {
         }
 
         const result = await resp.json();
-        return contentPostHandler(result.choices[0].message.content);
+        console.log('deepseek result:', result);
+        
+        // 将训练数据作为附加信息返回
+        const translatedText = result.choices[0].message.content;
+        return {
+            text: contentPostHandler(translatedText),
+            trainingData: {
+                ...trainingData,
+                output: translatedText
+            }
+        };
     } catch (error) {
         console.error('API调用失败:', error);
         throw error;

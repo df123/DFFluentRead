@@ -26,11 +26,115 @@ export default defineContentScript({
         });
 
         // 监听来自 popup 的消息
-        browser.runtime.onMessage.addListener((message: { type: string; }) => {
+        browser.runtime.onMessage.addListener((message: { type: string; x?: number; y?: number; }) => {
             if (message.type === 'clearCache') {
                 // 清除所有翻译缓存
                 clearAllTranslations();
                 return Promise.resolve(true); // 返回成功响应
+            } else if (message.type === 'exportCache') {
+                // 导出缓存
+                exportCacheToFile();
+                return Promise.resolve(true);
+            } else if (message.type === 'retranslate') {
+                let x = message.x;
+                let y = message.y;
+                
+                // 如果没有收到坐标，尝试从选区获取
+                if (x === undefined || y === undefined) {
+                    const selection = window.getSelection();
+                    if (selection && selection.rangeCount > 0) {
+                        const range = selection.getRangeAt(0);
+                        const rect = range.getBoundingClientRect();
+                        x = rect.left;
+                        y = rect.top;
+                    }
+                }
+            
+                // 只有在有有效坐标时才进行处理
+                if (x !== undefined && y !== undefined) {
+                    const element = document.elementFromPoint(x, y) as HTMLElement;
+                    if (element) {
+                        // 移除所有相关的翻译类和属性
+                        element.classList.remove('fluent-read-processed', 'fluent-read-bilingual');
+                        element.removeAttribute('data-fr-translated');
+                        // 移除翻译结果元素
+                        element.querySelectorAll('.fluent-read-bilingual-content').forEach(el => el.remove());
+                        // 修改右键翻译调用，使用isContextMenu标记
+                        handleTranslation(x, y, undefined, config.contextMenuService, true);
+                    }
+                }
+                return Promise.resolve(true);
+            } else if (message.type === 'editTranslation') {
+                let x = message.x;
+                let y = message.y;
+                
+                // 如果没有收到坐标，尝试从选区获取
+                if (x === undefined || y === undefined) {
+                    const selection = window.getSelection();
+                    if (selection && selection.rangeCount > 0) {
+                        const range = selection.getRangeAt(0);
+                        const rect = range.getBoundingClientRect();
+                        x = rect.left;
+                        y = rect.top;
+                    }
+                }
+                
+                if (x !== undefined && y !== undefined) {
+                    const element = document.elementFromPoint(x, y) as HTMLElement;
+                    if (element) {
+                        // 修改这里：只获取当前点击元素内的译文内容
+                        const bilingualContent = element.querySelector(':scope > .fluent-read-bilingual-content');
+                        if (bilingualContent) {
+                            const originalText = element.textContent?.replace(bilingualContent.textContent || '', '').trim() || '';
+                            
+                            // 查找对应的训练数据
+                            let trainKey = '';
+                            for (let i = 0; i < localStorage.length; i++) {
+                                const key = localStorage.key(i);
+                                if (key?.startsWith('deepseek_train_')) {
+                                    const data = JSON.parse(localStorage.getItem(key) || '{}');
+                                    if (data.instruction.includes(originalText)) {
+                                        trainKey = key;
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            if (trainKey) {
+                                // 创建编辑弹窗
+                                const dialog = document.createElement('div');
+                                const saveButton = document.createElement('button');
+                                const textarea = document.createElement('textarea');
+                                
+                                dialog.className = 'edit-translation-modal';
+                                dialog.innerHTML = `
+                                    <h3>修改译文</h3>
+                                    <div>原文：${originalText}</div>
+                                    <div>译文：</div>
+                                `;
+                                
+                                textarea.value = bilingualContent.textContent || '';
+                                saveButton.textContent = '保存';
+                                saveButton.className = 'save-translation-btn';
+                                
+                                dialog.appendChild(textarea);
+                                dialog.appendChild(saveButton);
+                                document.body.appendChild(dialog);
+                                
+                                // 使用 addEventListener 绑定事件
+                                saveButton.addEventListener('click', () => {
+                                    const data = JSON.parse(localStorage.getItem(trainKey) || '{}');
+                                    data.output = textarea.value;
+                                    localStorage.setItem(trainKey, JSON.stringify(data));
+                                    dialog.remove();
+                                    // 修改这里：确保只更新当前点击元素内的译文
+                                    element.querySelector(':scope > .fluent-read-bilingual-content')!.textContent = textarea.value;
+                                });
+                            }
+                        }
+                    }
+                }
+                return Promise.resolve(true);
             }
         });
     }
@@ -39,6 +143,20 @@ export default defineContentScript({
 // 注册所有手动翻译触发事件监听器
 function setupManualTranslationTriggers() {
     const screen = { mouseX: 0, mouseY: 0, hotkeyPressed: false, otherKeyPressed: false, hasSlideTranslation: false };
+    
+    // 添加右键翻译快捷键监听
+    window.addEventListener('keydown', event => {
+        if (config.contextMenuHotkey === event.key) {
+            const element = document.elementFromPoint(screen.mouseX, screen.mouseY) as HTMLElement;
+            if (element) {
+                element.classList.remove('fluent-read-processed', 'fluent-read-bilingual');
+                element.removeAttribute('data-fr-translated');
+                element.querySelectorAll('.fluent-read-bilingual-content').forEach(el => el.remove());
+                handleTranslation(screen.mouseX, screen.mouseY, undefined, config.contextMenuService, true);
+            }
+        }
+    });
+
     // 1. 失去焦点时
     window.addEventListener('blur', () => {
         screen.hotkeyPressed = false;
@@ -202,4 +320,22 @@ function clearAllTranslations() {
     cache.clean();
 
     console.log('已清除所有翻译缓存');
+}
+
+// 添加导出缓存到文件的函数
+async function exportCacheToFile() {
+    try {
+        const cacheData = await cache.exportCache();
+        const blob = new Blob([cacheData], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `fluent-read-cache-${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    } catch (error) {
+        console.error('导出缓存失败:', error);
+    }
 }

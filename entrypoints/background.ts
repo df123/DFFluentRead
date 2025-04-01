@@ -7,11 +7,44 @@ export default defineBackground({
         safari: false,
     },
     main() {
+        // 注册右键菜单
+        browser.contextMenus.create({
+            id: "retranslate",
+            title: "重新翻译",
+            contexts: ["all"]
+        });
+        
+        // 添加修改翻译菜单
+        browser.contextMenus.create({
+            id: "editTranslation",
+            title: "修改译文",
+            contexts: ["all"]
+        });
+
+        // 处理右键菜单点击
+        browser.contextMenus.onClicked.addListener((info:any, tab:any) => {
+            if (info.menuItemId === "retranslate" && tab?.id) {
+                browser.tabs.sendMessage(tab.id, {
+                    type: "retranslate",
+                    x: info.x,
+                    y: info.y
+                });
+            } else if (info.menuItemId === "editTranslation" && tab?.id) {
+                browser.tabs.sendMessage(tab.id, {
+                    type: "editTranslation",
+                    x: info.x,
+                    y: info.y
+                });
+            }
+        });
+
         // 处理翻译请求
         browser.runtime.onMessage.addListener((message: any) => {
             return new Promise((resolve, reject) => {
+                // 使用指定的服务或默认服务
+                const serviceToUse = message.service || config.service;
                 // 翻译
-                _service[config.service](message)
+                _service[serviceToUse](message)
                     .then(resp => resolve(resp))    // 成功
                     .catch(error => reject(error)); // 失败
             });

@@ -76,6 +76,28 @@ export const cache = {
         }
         // 批量删除
         keysToDelete.forEach(key => localStorage.removeItem(key));
+    },
+
+    // 专门导出 deepseek 训练数据，并在导出后清除
+    async exportCache() {
+        const trainData = [];
+        const keysToDelete = [];
+        
+        // 遍历所有本地存储项
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            // 只收集 deepseek_train_ 开头的数据
+            if (key && key.startsWith('deepseek_train_')) {
+                const data = JSON.parse(localStorage.getItem(key) || '{}');
+                trainData.push(data);
+                keysToDelete.push(key);
+            }
+        }
+
+        // 导出后删除所有训练数据
+        keysToDelete.forEach(key => localStorage.removeItem(key));
+        
+        return JSON.stringify(trainData, null, 2);
     }
 };
 

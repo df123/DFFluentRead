@@ -94,7 +94,9 @@ export function autoTranslateEnglishPage() {
 }
 
 // 处理鼠标悬停翻译的主函数
-export function handleTranslation(mouseX: number, mouseY: number, delayTime: number = 0) {
+// 添加可选参数 forcedService
+// 修改handleTranslation函数签名，添加isContextMenu参数
+export function handleTranslation(mouseX: number, mouseY: number, delayTime: number = 0, forcedService?: string, isContextMenu: boolean = false) {
     // 检查配置
     if (!checkConfig()) return;
 
@@ -113,16 +115,19 @@ export function handleTranslation(mouseX: number, mouseY: number, delayTime: num
 
         // 根据翻译模式进行翻译
         if (config.display === styles.bilingualTranslation) {
-            handleBilingualTranslation(node, delayTime > 0);  // 根据 delayTime 可判断是否为滑动翻译
+            handleBilingualTranslation(node, delayTime > 0, forcedService, isContextMenu);  // 根据 delayTime 可判断是否为滑动翻译
         } else {
-            handleSingleTranslation(node, delayTime > 0);
+            handleSingleTranslation(node, delayTime > 0, forcedService, isContextMenu);
         }
     }, delayTime);
 }
 
 // 双语翻译
-export function handleBilingualTranslation(node: any, slide: boolean) {
+// 修改双语翻译函数
+export function handleBilingualTranslation(node: any, slide: boolean, forcedService?: string, isContextMenu: boolean = false) {
     let nodeOuterHTML = node.outerHTML;
+
+
     // 如果已经翻译过，250ms 后删除翻译结果
     let bilingualNode = searchClassName(node, 'fluent-read-bilingual');
     if (bilingualNode) {
@@ -140,50 +145,54 @@ export function handleBilingualTranslation(node: any, slide: boolean) {
         }, 250);
         return;
     }
-
-    // 检查是否有缓存
-    let cached = cache.localGet(node.textContent);
-    if (cached) {
-        let spinner = insertLoadingSpinner(node, true);
-        setTimeout(() => {
-            spinner.remove();
-            htmlSet.delete(nodeOuterHTML);
-            bilingualAppendChild(node, cached);
-        }, 250);
-        return;
+    // 不是isContextMenu时才检查缓存
+    if (!isContextMenu) {
+        // 检查是否有缓存
+        let cached = cache.localGet(node.textContent);
+        if (cached) {
+            let spinner = insertLoadingSpinner(node, true);
+            setTimeout(() => {
+                spinner.remove();
+                htmlSet.delete(nodeOuterHTML);
+                bilingualAppendChild(node, cached);
+            }, 250);
+            return;
+        }
     }
 
     // 翻译
-    bilingualTranslate(node, nodeOuterHTML);
+    bilingualTranslate(node, nodeOuterHTML, forcedService, isContextMenu);
 }
 
 // 单语翻译
-export function handleSingleTranslation(node: any, slide: boolean) {
+// 修改单语翻译函数
+export function handleSingleTranslation(node: any, slide: boolean, forcedService?: string, isContextMenu: boolean = false) {
     let nodeOuterHTML = node.outerHTML;
-    let outerHTMLCache = cache.localGet(node.outerHTML);
 
+    if (!isContextMenu) {
+        let outerHTMLCache = cache.localGet(node.outerHTML);
+        if (outerHTMLCache) {
+            // handleTranslation 已处理防抖 故删除判断 原bug 在保存完成后 刷新页面 可以取得缓存 直接return并没有翻译
+            let spinner = insertLoadingSpinner(node, true);
+            setTimeout(() => {
+                spinner.remove();
+                htmlSet.delete(nodeOuterHTML);
 
-    if (outerHTMLCache) {
-        // handleTranslation 已处理防抖 故删除判断 原bug 在保存完成后 刷新页面 可以取得缓存 直接return并没有翻译
-        let spinner = insertLoadingSpinner(node, true);
-        setTimeout(() => {
-            spinner.remove();
-            htmlSet.delete(nodeOuterHTML);
+                // 兼容部分网站独特的 DOM 结构
+                let fn = replaceCompatFn[getMainDomain(document.location.hostname)];
+                if (fn) fn(node, outerHTMLCache);
+                else node.outerHTML = outerHTMLCache;
 
-            // 兼容部分网站独特的 DOM 结构
-            let fn = replaceCompatFn[getMainDomain(document.location.hostname)];
-            if (fn) fn(node, outerHTMLCache);
-            else node.outerHTML = outerHTMLCache;
-
-        }, 250);
-        return;
+            }, 250);
+            return;
+        }
     }
 
-    singleTranslate(node);
+    singleTranslate(node, forcedService, isContextMenu);
 }
 
 
-function bilingualTranslate(node: any, nodeOuterHTML: any) {
+function bilingualTranslate(node: any, nodeOuterHTML: any, forcedService?: string, isContextMenu: boolean = false) {
     if (detectlang(node.textContent.replace(/[\s\u3000]/g, '')) === config.to) return;
 
     let origin = node.textContent;
@@ -196,13 +205,45 @@ function bilingualTranslate(node: any, nodeOuterHTML: any) {
 
     // 正在翻译...允许失败重试 3 次
     const translating = (failCount = 0) => {
-        browser.runtime.sendMessage({ context: document.title, origin: origin })
-            .then((text: string) => {
+        browser.runtime.sendMessage({
+            context: document.title,
+            origin: origin,
+            service: forcedService,
+            isContextMenu // 添加isContextMenu参数
+        })
+            .then((response: any) => {
                 clearTimeout(timeout);
                 spinner.remove();
                 htmlSet.delete(nodeOuterHTML);
-                bilingualAppendChild(node, text);
-                cache.localSet(origin, text);
+                
+                // 如果是deepseek服务且返回了训练数据
+                if (response.trainingData) {
+                    // 查找并删除相同翻译内容的旧训练数据
+                    const keysToDelete = [];
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (key && key.startsWith('deepseek_train_')) {
+                            const data = JSON.parse(localStorage.getItem(key) || '{}');
+                            if (data.instruction === response.trainingData.instruction) {
+                                keysToDelete.push(key);
+                            }
+                        }
+                    }
+                    // 删除旧的训练数据
+                    keysToDelete.forEach(key => localStorage.removeItem(key));
+                    
+                    // 保存新的训练数据
+                    const saveKey = `deepseek_train_${Date.now()}`;
+                    localStorage.setItem(saveKey, JSON.stringify(response.trainingData));
+                    console.log('保存deepseek训练数据:', saveKey, response.trainingData);
+                    
+                    bilingualAppendChild(node, response.text);
+                    cache.localSet(origin, response.text);
+                } else {
+                    // 处理普通翻译结果
+                    bilingualAppendChild(node, response);
+                    cache.localSet(origin, response);
+                }
             })
             .catch((error: { toString: () => any; }) => {
                 clearTimeout(timeout);
@@ -220,10 +261,10 @@ function bilingualTranslate(node: any, nodeOuterHTML: any) {
 }
 
 
-export function singleTranslate(node: any) {
+export function singleTranslate(node: any, forcedService?: string, isContextMenu: boolean = false) {
     if (detectlang(node.textContent.replace(/[\s\u3000]/g, '')) === config.to) return;
 
-    let origin = servicesType.isMachine(config.service) ? node.innerHTML : LLMStandardHTML(node);
+    let origin = servicesType.isMachine(forcedService || config.service) ? node.innerHTML : LLMStandardHTML(node);
 
     let spinner = insertLoadingSpinner(node);
     let timeout = setTimeout(() => {
@@ -234,7 +275,12 @@ export function singleTranslate(node: any) {
 
     // 正在翻译...允许失败重试 3 次
     const translating = (failCount = 0) => {
-        browser.runtime.sendMessage({ context: document.title, origin: origin })
+        browser.runtime.sendMessage({
+            context: document.title,
+            origin: origin,
+            service: forcedService,
+            isContextMenu // 添加isContextMenu参数
+        })
             .then((text: string) => {
                 clearTimeout(timeout);
                 spinner.remove();
