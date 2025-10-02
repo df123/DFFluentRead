@@ -58,12 +58,6 @@ export default defineBackground({
         safari: false,
     },
     async main() {
-        // 初始化翻译统计管理器
-        try {
-            await translationStatsManager.initialize();
-        } catch (error) {
-            console.error('翻译统计管理器初始化失败:', error);
-        }
         // 创建右键菜单项
         try {
             // 创建父菜单

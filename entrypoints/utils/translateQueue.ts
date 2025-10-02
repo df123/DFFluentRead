@@ -154,10 +154,20 @@ export function getQueueStatus() {
  * 获取扩展队列状态（包含进度和统计信息）
  * @returns 返回扩展队列状态对象
  */
-export function getExtendedQueueStatus(): ExtendedQueueStatus {
+export async function getExtendedQueueStatus(): Promise<ExtendedQueueStatus> {
   const maxConcurrent = getMaxConcurrentTranslations();
   const remainingCharacters = totalCharacters - completedCharacters;
   const progressPercentage = totalCharacters > 0 ? (completedCharacters / totalCharacters) * 100 : 0;
+
+  // Ensure translationStatsManager has loaded persisted stats before using it.
+  try {
+    // Some environments may have already initialized it; awaiting ready is safe.
+    // @ts-ignore - access ready promise
+    if (translationStatsManager.ready) await (translationStatsManager as any).ready;
+  } catch (e) {
+    // ignore
+  }
+
   const averageSpeed = translationStatsManager.getAverageSpeed();
   const estimatedRemainingTime = translationStatsManager.getRemainingTime(remainingCharacters);
 

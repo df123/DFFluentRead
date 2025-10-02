@@ -49,6 +49,9 @@ export interface SpeedHistory {
  * 负责速度计算、数据持久化和进度计算
  */
 export class TranslationStatsManager {
+  private _initialized = false;
+  private _readyPromise!: Promise<void>;
+  private _readyResolve!: () => void;
   private static readonly STORAGE_KEY = 'translation-speed-history';
   private static readonly DEFAULT_SPEED = 20; // 默认速度 20 字符/秒
   private static readonly MAX_TASK_RECORDS = 50; // 最大记录任务数
@@ -63,11 +66,37 @@ export class TranslationStatsManager {
 
   private currentTasks: Map<string, TranslationTaskInfo> = new Map();
 
+  constructor() {
+    // 创建 ready promise，使外部可通过 translationStatsManager.ready 等待初始化完成
+    this._readyPromise = new Promise<void>((resolve) => {
+      this._readyResolve = resolve;
+    });
+    // 注意：initialize() 仍需被外部或模块顶层调用以开始加载。
+  }
+
   /**
    * 初始化统计管理器
    */
   async initialize(): Promise<void> {
-    await this.loadSpeedHistory();
+    if (this._initialized) return;
+    this._initialized = true;
+    try {
+      await this.loadSpeedHistory();
+    } catch (error) {
+      // preserve previous behavior: log and continue, but ensure ready will resolve
+      console.warn('Failed to initialize TranslationStatsManager:', error);
+    } finally {
+      // resolve ready promise when load done or on error so callers won't block forever
+      if (this._readyResolve) this._readyResolve();
+    }
+  }
+
+  /**
+   * A promise that resolves when the manager has loaded persisted stats.
+   * Useful for callers that need the persisted averageSpeed to be available.
+   */
+  get ready(): Promise<void> {
+    return this._readyPromise;
   }
 
   /**
@@ -134,7 +163,6 @@ export class TranslationStatsManager {
    * @returns 平均速度（字符/秒）
    */
   getAverageSpeed(): number {
-    console.log('Current average speed:', this.currentStats.averageSpeed);
     return this.currentStats.averageSpeed;
   }
 
@@ -234,3 +262,6 @@ export class TranslationStatsManager {
 
 // 创建全局统计管理器实例
 export const translationStatsManager = new TranslationStatsManager();
+
+
+translationStatsManager.initialize();

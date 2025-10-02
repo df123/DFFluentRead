@@ -177,16 +177,21 @@ watch(() => status.value.estimatedRemainingTime, (newTime, oldTime) => {
 // 更新状态的定时器
 let statusUpdateTimer: number;
 
-// 创建更新状态的函数
-const updateStatus = () => {
-  const currentStatus = getExtendedQueueStatus();
-  status.value = currentStatus;
-  
-  // 只有当有活跃任务或等待任务时才显示状态卡片
-  isVisible.value = currentStatus.activeTranslations > 0 || currentStatus.pendingTranslations > 0;
-  
-  // 如果没有活跃任务，停止倒计时
-  if (currentStatus.activeTranslations === 0 && currentStatus.pendingTranslations === 0) {
+// 创建更新状态的函数（支持异步 getExtendedQueueStatus）
+const updateStatus = async () => {
+  try {
+    const currentStatus = await getExtendedQueueStatus();
+    status.value = currentStatus;
+
+    // 只有当有活跃任务或等待任务时才显示状态卡片
+    isVisible.value = currentStatus.activeTranslations > 0 || currentStatus.pendingTranslations > 0;
+
+    // 如果没有活跃任务，停止倒计时
+    if (currentStatus.activeTranslations === 0 && currentStatus.pendingTranslations === 0) {
+      stopCountdown();
+    }
+  } catch (e) {
+    // 如果获取状态失败，保持现有状态并停止倒计时以避免误导用户
     stopCountdown();
   }
 };
@@ -230,8 +235,12 @@ let resetClosedStateCleanup: () => void;
 
 // 组件挂载时启动定时器和事件监听
 onMounted(() => {
-  updateStatus(); // 立即执行一次更新
-  statusUpdateTimer = window.setInterval(updateStatus, 500);
+  // 立即执行一次更新（异步），并启动定时器来周期性调用异步更新函数
+  updateStatus();
+  statusUpdateTimer = window.setInterval(() => {
+    // 调用异步函数但不要泄漏未处理的Promise
+    updateStatus().catch(() => {});
+  }, 500);
   eventListenerCleanup = listenToFloatingBallState();
   resetClosedStateCleanup = resetClosedState();
 });
