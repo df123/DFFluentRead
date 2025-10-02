@@ -385,7 +385,7 @@ export const options = {
         {value: "triple_space", label: "连按三下空格"},
         {value: "triple_equal", label: "连按三下等号(=)"},
         {value: "triple_dash", label: "连按三下短横线(-)"},
-    ],
+    ]
 };
 
 export const defaultOption = {
@@ -408,5 +408,7 @@ export const defaultOption = {
     floatingBallHotkey: "Alt+T", // 默认悬浮球快捷键
     inputBoxTranslationTrigger: "disabled", // 默认关闭输入框翻译
     inputBoxTranslationTarget: "en", // 默认翻译成英文
+    batchTranslationEnabled: true, // 默认开启批量翻译
+    batchTranslationSize: 3000, // 默认每批3000字符
 };
 

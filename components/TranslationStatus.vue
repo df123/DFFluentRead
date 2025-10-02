@@ -2,20 +2,41 @@
   <div class="translation-status-container" v-if="isVisible && isFloatingBallTranslating && !userClosed">
     <div class="translation-status-card">
       <div class="translation-status-header">
-        <div class="translation-status-title">翻译进度</div>
-        <div class="translation-status-close" @click="close">×</div>
+        <div class="translation-status-title" data-fr-translated="true" >翻译进度</div>
+        <div class="translation-status-close" data-fr-translated="true" @click="close">×</div>
       </div>
       <div class="translation-status-content">
-        <div class="translation-status-row">
-          <div class="translation-status-label">当前活跃任务:</div>
-          <div class="translation-status-value">{{ status.activeTranslations }} / {{ status.maxConcurrent }}</div>
+        <!-- 进度条部分 -->
+        <div class="translation-progress-section">
+          <div class="translation-progress-info">
+            <div class="translation-progress-percentage">{{ Math.round(status.progressPercentage) }}%</div>
+            <div class="translation-remaining-time" v-if="realTimeRemaining > 0">
+              剩余: {{ formatRemainingTime(realTimeRemaining) }}
+            </div>
+          </div>
+          <div class="translation-overall-progress">
+            <div class="translation-overall-progress-bar" :style="overallProgressStyle"></div>
+          </div>
         </div>
-        <div class="translation-status-row">
-          <div class="translation-status-label">等待中的任务:</div>
-          <div class="translation-status-value">{{ status.pendingTranslations }}</div>
-        </div>
-        <div class="translation-status-progress">
-          <div class="translation-status-progress-bar" :style="progressStyle"></div>
+        
+        <!-- 统计信息部分 -->
+        <div class="translation-stats-section">
+          <div class="translation-status-row">
+            <div class="translation-status-label" data-fr-translated="true" >当前活跃任务:</div>
+            <div class="translation-status-value" data-fr-translated="true" >{{ status.activeTranslations }} / {{ status.maxConcurrent }}</div>
+          </div>
+          <div class="translation-status-row">
+            <div class="translation-status-label" data-fr-translated="true" >等待中的任务:</div>
+            <div class="translation-status-value" data-fr-translated="true" >{{ status.pendingTranslations }}</div>
+          </div>
+          <div class="translation-status-row">
+            <div class="translation-status-label" data-fr-translated="true" >字符进度:</div>
+            <div class="translation-status-value" data-fr-translated="true" >{{ formatNumber(status.completedCharacters) }} / {{ formatNumber(status.totalCharacters) }}</div>
+          </div>
+          <div class="translation-status-row">
+            <div class="translation-status-label" data-fr-translated="true" >平均速度:</div>
+            <div class="translation-status-value" data-fr-translated="true" >{{ status.averageSpeed }} 字符/秒</div>
+          </div>
         </div>
       </div>
     </div>
@@ -23,29 +44,59 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue';
-import { getTranslationStatus } from '../entrypoints/utils/translateApi';
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
+import { getExtendedQueueStatus, ExtendedQueueStatus } from '../entrypoints/utils/translateQueue';
 
 // 组件状态
 const isVisible = ref(false);
 const isFloatingBallTranslating = ref(false);
 const userClosed = ref(false); // 用户是否关闭了状态框
-const status = ref({
+const status = ref<ExtendedQueueStatus>({
   activeTranslations: 0,
   pendingTranslations: 0,
   maxConcurrent: 6,
   isQueueFull: false,
-  totalTasksInProcess: 0
+  totalTasksInProcess: 0,
+  totalCharacters: 0,
+  completedCharacters: 0,
+  remainingCharacters: 0,
+  progressPercentage: 0,
+  estimatedRemainingTime: 0,
+  averageSpeed: 0
 });
 
-// 计算进度条样式
-const progressStyle = computed(() => {
-  const percent = status.value.activeTranslations / status.value.maxConcurrent * 100;
+// 实时剩余时间
+const realTimeRemaining = ref(0);
+let countdownTimer: number | null = null;
+
+// 计算总体进度条样式
+const overallProgressStyle = computed(() => {
+  const percent = status.value.progressPercentage;
   return {
     width: `${percent}%`,
-    backgroundColor: percent > 80 ? '#ff7675' : percent > 50 ? '#fdcb6e' : '#00cec9'
+    backgroundColor: percent > 80 ? '#00b894' : percent > 50 ? '#fdcb6e' : '#0984e3'
   };
 });
+
+// 格式化剩余时间
+const formatRemainingTime = (seconds: number): string => {
+  if (seconds < 60) {
+    return `${seconds}秒`;
+  } else if (seconds < 3600) {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}分${remainingSeconds}秒`;
+  } else {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    return `${hours}小时${minutes}分`;
+  }
+};
+
+// 格式化数字显示（添加千位分隔符）
+const formatNumber = (num: number): string => {
+  return num.toLocaleString('zh-CN');
+};
 
 // 关闭状态卡片
 const close = () => {
@@ -81,16 +132,63 @@ const resetClosedState = () => {
   };
 };
 
+// 启动倒计时
+const startCountdown = () => {
+  if (countdownTimer) {
+    clearInterval(countdownTimer);
+  }
+  
+  // 只有当有剩余时间时才启动倒计时
+  if (status.value.estimatedRemainingTime > 0) {
+    realTimeRemaining.value = status.value.estimatedRemainingTime;
+    
+    countdownTimer = window.setInterval(() => {
+      if (realTimeRemaining.value > 0) {
+        realTimeRemaining.value--;
+      } else {
+        // 倒计时结束，停止定时器
+        if (countdownTimer) {
+          clearInterval(countdownTimer);
+          countdownTimer = null;
+        }
+      }
+    }, 1000);
+  }
+};
+
+// 停止倒计时
+const stopCountdown = () => {
+  if (countdownTimer) {
+    clearInterval(countdownTimer);
+    countdownTimer = null;
+  }
+  realTimeRemaining.value = 0;
+};
+
+// 监听状态变化，重新启动倒计时
+watch(() => status.value.estimatedRemainingTime, (newTime, oldTime) => {
+  // 如果剩余时间变化较大（超过5秒），重新启动倒计时
+  if (Math.abs(newTime - oldTime) > 5) {
+    stopCountdown();
+    startCountdown();
+  }
+});
+
 // 更新状态的定时器
 let statusUpdateTimer: number;
 
 // 创建更新状态的函数
 const updateStatus = () => {
-  const currentStatus = getTranslationStatus();
+  const currentStatus = getExtendedQueueStatus();
   status.value = currentStatus;
   
   // 只有当有活跃任务或等待任务时才显示状态卡片
   isVisible.value = currentStatus.activeTranslations > 0 || currentStatus.pendingTranslations > 0;
+  
+  // 如果没有活跃任务，停止倒计时
+  if (currentStatus.activeTranslations === 0 && currentStatus.pendingTranslations === 0) {
+    stopCountdown();
+  }
 };
 
 // 监听悬浮球翻译状态变化
@@ -102,11 +200,15 @@ const listenToFloatingBallState = () => {
     if (!isVisible.value) {
       userClosed.value = false;
     }
+    // 开始倒计时
+    startCountdown();
   };
   
   // 监听自定义事件: 翻译结束
   const handleTranslationEnded = () => {
     isFloatingBallTranslating.value = false;
+    // 停止倒计时
+    stopCountdown();
   };
   
   // 添加事件监听器
@@ -137,6 +239,7 @@ onMounted(() => {
 // 组件卸载时清理定时器和事件监听
 onUnmounted(() => {
   clearInterval(statusUpdateTimer);
+  stopCountdown();
   eventListenerCleanup.cleanup();
   resetClosedStateCleanup();
 });
@@ -156,7 +259,7 @@ onUnmounted(() => {
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   overflow: hidden;
-  width: 220px;
+  width: 280px;
   transition: all 0.3s ease;
   border: 1px solid #e0e0e0;
 }
@@ -191,11 +294,52 @@ onUnmounted(() => {
   padding: 12px;
 }
 
+/* 进度条部分样式 */
+.translation-progress-section {
+  margin-bottom: 12px;
+}
+
+.translation-progress-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.translation-progress-percentage {
+  font-size: 16px;
+  font-weight: bold;
+  color: #3498db;
+}
+
+.translation-remaining-time {
+  font-size: 12px;
+  color: #666;
+}
+
+.translation-overall-progress {
+  height: 8px;
+  background-color: #f1f1f1;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.translation-overall-progress-bar {
+  height: 100%;
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+/* 统计信息部分样式 */
+.translation-stats-section {
+  border-top: 1px solid #f0f0f0;
+  padding-top: 12px;
+}
+
 .translation-status-row {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 8px;
-  font-size: 13px;
+  margin-bottom: 6px;
+  font-size: 12px;
 }
 
 .translation-status-label {
@@ -205,19 +349,6 @@ onUnmounted(() => {
 .translation-status-value {
   font-weight: 600;
   color: #333;
-}
-
-.translation-status-progress {
-  height: 6px;
-  background-color: #f1f1f1;
-  border-radius: 3px;
-  overflow: hidden;
-  margin-top: 10px;
-}
-
-.translation-status-progress-bar {
-  height: 100%;
-  transition: width 0.3s ease, background-color 0.3s ease;
 }
 
 /* 暗黑模式支持 - 使用 :root[class="dark"] 选择器匹配 FluentRead 的主题系统 */
@@ -267,4 +398,4 @@ onUnmounted(() => {
     background-color: #3d3d3d;
   }
 }
-</style> 
+</style>

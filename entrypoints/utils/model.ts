@@ -53,6 +53,8 @@ export class Config {
     translationStatus: boolean; // 是否启用全文翻译进度面板
     inputBoxTranslationTrigger: string; // 输入框翻译触发方式
     inputBoxTranslationTarget: string; // 输入框翻译目标语言
+    batchTranslationEnabled: boolean; // 是否启用批量翻译
+    batchTranslationSize: number; // 每批翻译的最大文本长度
 
     constructor() {
         this.on = true;
@@ -98,6 +100,8 @@ export class Config {
         this.translationStatus = true; // 默认启用翻译进度面板
         this.inputBoxTranslationTrigger = 'disabled'; // 默认关闭输入框翻译
         this.inputBoxTranslationTarget = 'en'; // 默认翻译成英文
+        this.batchTranslationEnabled = true; // 默认开启批量翻译
+        this.batchTranslationSize = 3000; // 默认每批3000字符
     }
 }
 

@@ -501,6 +501,43 @@
           </el-col>
         </el-row>
 
+        <!-- 批量翻译设置 -->
+        <el-row class="margin-bottom margin-left-2em">
+          <el-col :span="20" class="lightblue rounded-corner">
+            <el-tooltip class="box-item" effect="dark" content="批量翻译功能可以将多个文本项合并成一个批次进行翻译，提高翻译效率，减少API调用次数" placement="top-start" :show-after="500">
+              <span class="popup-text popup-vertical-left">批量翻译<el-icon class="icon-margin">
+                  <ChatDotRound />
+                </el-icon></span>
+            </el-tooltip>
+          </el-col>
+          <el-col :span="4" class="flex-end">
+            <el-switch v-model="config.batchTranslationEnabled" inline-prompt active-text="启用" inactive-text="禁用" />
+          </el-col>
+        </el-row>
+
+        <!-- 批量翻译大小 -->
+        <el-row v-if="config.batchTranslationEnabled" class="margin-bottom margin-left-2em">
+          <el-col :span="12" class="lightblue rounded-corner">
+            <el-tooltip class="box-item" effect="dark" content="设置每批翻译的最大文本长度，数值越大翻译效率越高，但可能超出API限制或影响翻译质量" placement="top-start" :show-after="500">
+              <span class="popup-text popup-vertical-left">批量翻译大小<el-icon class="icon-margin">
+                  <ChatDotRound />
+                </el-icon></span>
+            </el-tooltip>
+          </el-col>
+          <el-col :span="12">
+            <el-input-number
+                v-model="config.batchTranslationSize"
+                :min="1024"
+                :max="32768"
+                :step="500"
+                style="width: 100%"
+                @change="handleBatchSizeChange"
+                controls-position="right"
+            />
+            <div class="input-hint">建议范围：1024-32768字符</div>
+          </el-col>
+        </el-row>
+
         <!-- 输入框翻译目标语言 -->
         <el-row v-if="config.inputBoxTranslationTrigger !== 'disabled'" class="margin-bottom margin-left-2em">
           <el-col :span="12" class="lightblue rounded-corner">
@@ -1043,6 +1080,30 @@ const handleConcurrentChange = (currentValue: number | undefined, oldValue: numb
   
   ElMessage({
     message: `并发数量已更新为 ${currentValue}`,
+    type: 'success',
+    duration: 2000
+  });
+};
+
+// 处理批量翻译大小变化
+const handleBatchSizeChange = (currentValue: number | undefined, oldValue: number | undefined) => {
+  // 验证批量翻译大小的有效性
+  if (currentValue === undefined || currentValue < 1024 || currentValue > 32768) {
+    ElMessage({
+      message: '批量翻译大小必须在 1024-32768 字符之间',
+      type: 'warning',
+      duration: 2000
+    });
+    // 恢复默认值
+    config.value.batchTranslationSize = 4096;
+    return;
+  }
+  
+  // 显示设置已更新的提示
+  showRefreshTip.value = true;
+  
+  ElMessage({
+    message: `批量翻译大小已更新为 ${currentValue} 字符`,
     type: 'success',
     duration: 2000
   });
@@ -1595,6 +1656,13 @@ const validateConfig = (configData: any): boolean => {
 
 .error-text {
   color: var(--el-color-danger);
+  font-size: 12px;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.input-hint {
+  color: var(--el-text-color-secondary);
   font-size: 12px;
   margin-top: 4px;
   line-height: 1.4;

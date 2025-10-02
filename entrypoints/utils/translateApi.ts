@@ -51,7 +51,10 @@ export async function translateText(origin: string, context: string = document.t
   // 保存配置以确保计数持久化
   storage.setItem('local:config', JSON.stringify(config));
 
-  // 使用队列处理翻译请求
+  // 计算字符数
+  const characterCount = origin.length;
+
+  // 使用队列处理翻译请求（支持字符计数）
   return enqueueTranslation(async () => {
     // 创建翻译任务
     const translationTask = async (retryCount: number = 0): Promise<string> => {
@@ -94,7 +97,7 @@ export async function translateText(origin: string, context: string = document.t
 
     // 开始执行翻译任务
     return translationTask();
-  });
+  }, characterCount);
 }
 
 /**

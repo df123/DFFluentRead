@@ -8,6 +8,7 @@ import { detectlang, throttle } from "@/entrypoints/utils/common";
 import { getMainDomain, replaceCompatFn } from "@/entrypoints/main/compat";
 import { config } from "@/entrypoints/utils/config";
 import { translateText, cancelAllTranslations } from '@/entrypoints/utils/translateApi';
+import { batchTranslationManager } from '@/entrypoints/utils/batchTranslation';
 
 let hoverTimer: any; // 鼠标悬停计时器
 let htmlSet = new Set(); // 防抖
@@ -21,6 +22,7 @@ const TRANSLATED_ATTR = 'data-fr-translated';
 const TRANSLATED_ID_ATTR = 'data-fr-node-id'; // 添加节点ID属性
 
 let nodeIdCounter = 0; // 节点ID计数器
+let batchTranslationTimer: any = null; // 批量翻译计时器
 
 // 恢复原文内容
 export function restoreOriginalContent() {
@@ -72,6 +74,8 @@ export function restoreOriginalContent() {
     // 7. 消除可能存在的全局样式污染
     const tempStyleElements = document.querySelectorAll('style[data-fr-temp-style]');
     tempStyleElements.forEach(el => el.remove());
+
+    batchTranslationManager.clear();
 }
 
 // 自动翻译整个页面的功能
@@ -97,6 +101,74 @@ export function autoTranslateEnglishPage() {
 
     isAutoTranslating = true;
 
+    batchTranslationManager.clear();
+
+    if (config.batchTranslationEnabled) {
+        nodes.forEach(node => {
+            if (node.hasAttribute(TRANSLATED_ATTR)) return;
+            
+            const nodeId = `fr-node-${nodeIdCounter++}`;
+            node.setAttribute(TRANSLATED_ID_ATTR, nodeId);
+            
+            originalContents.set(nodeId, node.innerHTML);
+            
+            node.setAttribute(TRANSLATED_ATTR, 'true');
+
+            const text = node.textContent;
+            if (text && text.trim()) {
+                batchTranslationManager.addTextItem(text, node);
+            }
+        });
+        
+        if (isAutoTranslating) {
+            batchTranslationManager.startBatchTranslation();
+        }
+
+        mutationObserver = new MutationObserver((mutations) => {
+            if (!isAutoTranslating) return;
+            
+            const newNodesToTranslate: Element[] = [];
+            
+            mutations.forEach(mutation => {
+                mutation.addedNodes.forEach(node => {
+                    if (node.nodeType === 1) { 
+                        const newNodes = grabAllNode(node as Element).filter(
+                            n => !n.hasAttribute(TRANSLATED_ATTR)
+                        );
+                        newNodesToTranslate.push(...newNodes);
+                    }
+                });
+            });
+            
+            if (newNodesToTranslate.length > 0) {
+                newNodesToTranslate.forEach(node => {
+
+                    const nodeId = `fr-node-${nodeIdCounter++}`;
+                    node.setAttribute(TRANSLATED_ID_ATTR, nodeId);
+                    
+                    originalContents.set(nodeId, node.innerHTML);
+                    
+                    node.setAttribute(TRANSLATED_ATTR, 'true');
+
+                    const text = node.textContent;
+                    if (text && text.trim()) {
+                        batchTranslationManager.addTextItem(text, node);
+                    }
+                });
+                
+                if (batchTranslationTimer) {
+                    clearTimeout(batchTranslationTimer);
+                }
+                batchTranslationTimer = setTimeout(() => {
+                    if (isAutoTranslating) {
+                        batchTranslationManager.startBatchTranslation();
+                    }
+                    batchTranslationTimer = null;
+                }, 1000); 
+            }
+        });
+    } else {
+        // 传统翻译模式：使用视窗观察器
     // 创建观察器
     observer = new IntersectionObserver((entries, observer) => {
         entries.forEach(entry => {
@@ -153,6 +225,7 @@ export function autoTranslateEnglishPage() {
             });
         });
     });
+    }
 
     // 监听整个 body 的变化
     mutationObserver.observe(document.body, {

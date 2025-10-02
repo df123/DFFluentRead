@@ -33,12 +33,12 @@
         <div class="check-mark" v-if="isTranslating"></div>
         
         <!-- 添加快捷键提示 -->
-        <div class="shortcut-tooltip" v-if="showShortcutTooltip">
+        <div class="shortcut-tooltip" data-fr-translated="true" v-if="showShortcutTooltip">
           {{ shortcutTip }}
         </div>
         
         <!-- 波纹效果容器 -->
-        <div class="ripple-container" ref="rippleContainer"></div>
+        <div class="ripple-container" data-fr-translated="true" ref="rippleContainer"></div>
       </div>
     </div>
   </div>

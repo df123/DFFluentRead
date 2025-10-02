@@ -1,6 +1,7 @@
 import {_service} from "@/entrypoints/service/_service";
 import {config} from "@/entrypoints/utils/config";
 import {CONTEXT_MENU_IDS} from "@/entrypoints/utils/constant";
+import { translationStatsManager } from "@/entrypoints/utils/translationStats";
 
 // 翻译状态管理
 let translationStateMap = new Map<number, boolean>(); // tabId -> isTranslated
@@ -56,7 +57,13 @@ export default defineBackground({
     persistent: {
         safari: false,
     },
-    main() {
+    async main() {
+        // 初始化翻译统计管理器
+        try {
+            await translationStatsManager.initialize();
+        } catch (error) {
+            console.error('翻译统计管理器初始化失败:', error);
+        }
         // 创建右键菜单项
         try {
             // 创建父菜单
