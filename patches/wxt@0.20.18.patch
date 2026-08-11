@@ -1,0 +1,18 @@
+diff --git a/dist/core/runners/index.mjs b/dist/core/runners/index.mjs
+index 4da38b0c99f9dcbf950b0dc1f5aa96908c68333d..2fd30d31c357c91e2e82fe3d92fbc52d4785122a 100644
+--- a/dist/core/runners/index.mjs
++++ b/dist/core/runners/index.mjs
+@@ -8,7 +8,12 @@ import { createWslRunner } from "./wsl.mjs";
+ //#region src/core/runners/index.ts
+ async function createExtensionRunner() {
+ 	if (wxt.config.browser === "safari") return createSafariRunner();
+-	if (isWsl()) return createWslRunner();
++	// WSL 下默认的 wsl runner 只是打印警告、不启动浏览器。改为走 web-ext runner，
++	// 配合 dev:firefox:wsl 脚本设置 TMPDIR=$HOME/... ，可让 web-ext 正常驱动
++	// snap 版 Firefox（snap 沙箱看不到默认的 /tmp 临时 profile）。
++	if (!wxt.config.runnerConfig.config?.disabled && isWsl()) {
++		wxt.logger.info("WSL detected: using web-ext runner (set TMPDIR under $HOME for snap Firefox)");
++	}
+ 	if (wxt.config.runnerConfig.config?.disabled) return createManualRunner();
+ 	return createWebExtRunner();
+ }

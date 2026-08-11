@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "wxt",
     "dev:firefox": "wxt -b firefox",
+    "dev:firefox:wsl": "mkdir -p \"$HOME/wxt-tmp\" && TMPDIR=\"$HOME/wxt-tmp\" wxt -b firefox",
     "build": "wxt build",
     "build:firefox": "wxt build -b firefox",
     "zip": "wxt zip",
@@ -41,5 +42,10 @@
     "vuepress": "2.0.0-rc.19",
     "wxt": "^0.20.18"
   },
-  "packageManager": "pnpm@9.12.1+sha1.7084e7df42ee1d221994c2c2599277a2a937f050"
+  "packageManager": "pnpm@9.12.1+sha1.7084e7df42ee1d221994c2c2599277a2a937f050",
+  "pnpm": {
+    "patchedDependencies": {
+      "wxt@0.20.18": "patches/wxt@0.20.18.patch"
+    }
+  }
 }
