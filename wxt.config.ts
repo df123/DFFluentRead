@@ -43,5 +43,13 @@ export default defineConfig({
             } as FirefoxGeckoSettings,
         },
     },
+    // WXT 的 web-ext runner 对 chromium 用 --remote-debugging-pipe（无 TCP 端口），
+    // Playwright 等外部工具连不上；且品牌版 Chrome 137+ 已忽略 --load-extension。
+    // 设 WXT_NO_RUNNER=1 走手动模式：只构建+监听，浏览器由外部启动
+    // （--remote-debugging-port=9222 --enable-unsafe-extension-debugging），
+    // 扩展通过 CDP Extensions.loadUnpacked 加载 .output/chrome-mv3-dev。
+    webExt: {
+        disabled: process.env.WXT_NO_RUNNER === '1',
+    },
 
 });
