@@ -291,10 +291,6 @@ export const options = {
         {value: services.yiyan, label: "文心一言"},
         {value: services.custom, label: "自定义接口⭐️"},
     ],
-    display: [
-        {value: 0, label: "仅译文模式"},
-        {value: 1, label: "双语对照模式"},
-    ],
     // 双语翻译样式
     styles: [
         // 基础样式
@@ -393,7 +389,6 @@ export const defaultOption = {
     from: "auto",
     to: "zh-Hans",
     style: 1,
-    display: 1,
     hotkey: "Control",
     service: services.microsoft,
     custom: "http://localhost:11434/v1/chat/completions",

@@ -391,28 +391,6 @@ function detectChildMeta(parent: any): boolean {
     return true;
 }
 
-// 仅译文模式下获取 LLM 应当翻译的标准 HTML
-export function LLMStandardHTML(node: any) {
-    // 1. 初始化空字符串 text
-    // 2. 遍历子节点
-    // 3. 若为文本节点，拼接其文本内容
-    // 4. 若为元素节点且在 inlineSet 中，拼接其 outerHTML
-    // 5. 否则继续递归处理子节点
-    let text = "";
-    node.childNodes.forEach((child: any) => {
-        if (child.nodeType === Node.TEXT_NODE) {
-            text += child.nodeValue;
-        } else if (child.nodeType === Node.ELEMENT_NODE) {
-            if (inlineSet.has(child.tagName.toLowerCase())) {
-                text += child.outerHTML;
-            } else {
-                text += LLMStandardHTML(child);
-            }
-        }
-    });
-    return text;
-}
-
 export function beautyHTML(text: string): string {
     // 1. 先替换 SVG 中的大小写敏感词
     // 2. 再使用 js-beautify 格式化 HTML

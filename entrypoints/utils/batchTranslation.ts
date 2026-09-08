@@ -321,21 +321,17 @@ export class BatchTranslationManager {
 
     const node = item.node;
 
-    if (config.display === 1) {
-      node.classList.add('fluent-read-bilingual');
+    node.classList.add('fluent-read-bilingual');
 
-      const existingTranslation = node.querySelector('.fluent-read-bilingual-content');
-      if (existingTranslation) {
-        existingTranslation.remove();
-      }
-
-      const translationNode = document.createElement('span');
-      translationNode.className = 'fluent-read-bilingual-content';
-      translationNode.textContent = translatedText;
-      node.appendChild(translationNode);
-    } else {
-      node.innerHTML = translatedText;
+    const existingTranslation = node.querySelector('.fluent-read-bilingual-content');
+    if (existingTranslation) {
+      existingTranslation.remove();
     }
+
+    const translationNode = document.createElement('span');
+    translationNode.className = 'fluent-read-bilingual-content';
+    translationNode.textContent = translatedText;
+    node.appendChild(translationNode);
   }
 
   public clear(): void {

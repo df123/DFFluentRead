@@ -38,12 +38,6 @@ export function checkConfig(): boolean {
         }
     }
 
-    // Some translation services require "bilingual mode" to be enabled
-    if (config.display === 0 && config.service === services.google) {
-        sendErrorMessage("「谷歌翻译」仅支持双语模式，请切换翻译服务");
-        return false;
-    }
-
     return true;
 }
 

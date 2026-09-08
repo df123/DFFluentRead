@@ -16,21 +16,8 @@
   </div>
 
   <div v-show="config.on">
-    <!--    翻译模式-->
-    <el-row class="margin-bottom margin-left-2em">
-      <el-col :span="12" class="lightblue rounded-corner">
-        <span class="popup-text popup-vertical-left">翻译模式</span>
-      </el-col>
-      <el-col :span="12">
-        <el-select v-model="config.display" placeholder="请选择翻译模式">
-          <el-option class="select-left" v-for="item in options.display" :key="item.value" :label="item.label"
-            :value="item.value" />
-        </el-select>
-      </el-col>
-    </el-row>
-
     <!--    译文样式选择器-->
-    <el-row v-show="config.display === 1" class="margin-bottom margin-left-2em">
+    <el-row class="margin-bottom margin-left-2em">
       <el-col :span="12" class="lightblue rounded-corner">
         <el-tooltip class="box-item" effect="dark" content="选择双语模式下译文的显示样式，提供多种美观的效果" placement="top-start"
           :show-after="500">
@@ -62,7 +49,7 @@
       <el-col :span="12">
         <b>
           <el-select v-model="config.service" placeholder="请选择翻译服务">
-            <el-option class="select-left" v-for="item in compute.filteredServices" :key="item.value"
+            <el-option class="select-left" v-for="item in options.services" :key="item.value"
               :label="item.label" :value="item.value" :disabled="item.disabled"
               :class="{ 'select-divider': item.disabled }" />
           </el-select>
@@ -787,11 +774,7 @@ let compute = ref({
   showDeepLX: computed(() => config.value.service === 'deeplx'),
   // 10、是否自定义模型
   showCustomModel: computed(() => servicesType.isAI(config.value.service) && config.value.model[config.value.service] === "自定义模型"),
-  // 11、判断是否为"双语模式"，控制一些翻译服务的显示
-  filteredServices: computed(() => options.services.filter((service: any) =>
-    !([service.google].includes(service.value) && config.value.display !== 1))
-  ),
-  // 12、判断是否为 coze
+  // 11、判断是否为 coze
   showRobotId: computed(() => servicesType.isCoze(config.value.service)),
   // 13、是否显示New API配置
   showNewAPI: computed(() => servicesType.isNewApi(config.value.service)),

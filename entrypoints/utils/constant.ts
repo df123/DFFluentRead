@@ -48,13 +48,6 @@ export const constants = {
     TripleClickScreen: "TripleClickScreen",
 }
 
-export const styles = {
-    // 仅译文模式
-    singleTranslation: 0,
-    // 双语对照模式
-    bilingualTranslation: 1,
-}
-
 // 右键菜单ID常量
 export const CONTEXT_MENU_IDS = {
     TRANSLATE_FULL_PAGE: 'fluent-read-translate-full-page',

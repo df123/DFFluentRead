@@ -3,10 +3,8 @@ import { sendErrorMessage } from "./tip";
 import "element-plus/es/components/message/style/css";
 import {
   handleBilingualTranslation,
-  handleSingleTranslation,
 } from "@/entrypoints/main/trans";
 import { config } from "@/entrypoints/utils/config";
-import { styles } from "@/entrypoints/utils/constant";
 import { services, options } from "./option";
 
 const icon = {
@@ -63,12 +61,7 @@ function handleRetryClick(node: HTMLElement, wrapper: HTMLElement) {
     wrapper.remove(); // 移除错误提示元素，重新翻译
     node.classList.remove("fluent-read-failure"); // 移除失败标记
 
-    // 根据当前配置的翻译模式决定使用哪种翻译方式
-    if (config.display === styles.bilingualTranslation) {
-      handleBilingualTranslation(node, false);
-    } else {
-      handleSingleTranslation(node, false);
-    }
+    handleBilingualTranslation(node, false);
   };
 }
 

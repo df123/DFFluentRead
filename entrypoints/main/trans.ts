@@ -2,8 +2,7 @@ import { checkConfig, searchClassName, skipNode } from "../utils/check";
 import { cache } from "../utils/cache";
 import { options, servicesType } from "../utils/option";
 import { insertFailedTip, insertLoadingSpinner } from "../utils/icon";
-import { styles } from "@/entrypoints/utils/constant";
-import { beautyHTML, grabNode, grabAllNode, LLMStandardHTML, smashTruncationStyle } from "@/entrypoints/main/dom";
+import { grabNode, grabAllNode, smashTruncationStyle } from "@/entrypoints/main/dom";
 import { detectlang, throttle } from "@/entrypoints/utils/common";
 import { getMainDomain, replaceCompatFn } from "@/entrypoints/main/compat";
 import { config } from "@/entrypoints/utils/config";
@@ -190,11 +189,7 @@ export function autoTranslateEnglishPage() {
                 // 标记为已翻译
                 node.setAttribute(TRANSLATED_ATTR, 'true');
 
-                if (config.display === styles.bilingualTranslation) {
-                    handleBilingualTranslation(node, false);
-                } else {
-                    handleSingleTranslation(node, false);
-                }
+                handleBilingualTranslation(node, false);
 
                 // 停止观察该节点
                 observer.unobserve(node);
@@ -255,12 +250,8 @@ export function handleTranslation(mouseX: number, mouseY: number, delayTime: num
         if (htmlSet.has(nodeOuterHTML)) return;
         htmlSet.add(nodeOuterHTML);
 
-        // 根据翻译模式进行翻译
-        if (config.display === styles.bilingualTranslation) {
-            handleBilingualTranslation(node, delayTime > 0);  // 根据 delayTime 可判断是否为滑动翻译
-        } else {
-            handleSingleTranslation(node, delayTime > 0);
-        }
+        // 双语对照翻译（根据 delayTime 可判断是否为滑动翻译）
+        handleBilingualTranslation(node, delayTime > 0);
     }, delayTime);
 }
 
@@ -301,32 +292,6 @@ export function handleBilingualTranslation(node: any, slide: boolean) {
     bilingualTranslate(node, nodeOuterHTML);
 }
 
-// 单语翻译
-export function handleSingleTranslation(node: any, slide: boolean) {
-    let nodeOuterHTML = node.outerHTML;
-    let outerHTMLCache = cache.localGet(node.outerHTML);
-
-
-    if (outerHTMLCache) {
-        // handleTranslation 已处理防抖 故删除判断 原bug 在保存完成后 刷新页面 可以取得缓存 直接return并没有翻译
-        let spinner = insertLoadingSpinner(node, true);
-        setTimeout(() => {
-            spinner.remove();
-            htmlSet.delete(nodeOuterHTML);
-
-            // 兼容部分网站独特的 DOM 结构
-            let fn = replaceCompatFn[getMainDomain(document.location.hostname)];
-            if (fn) fn(node, outerHTMLCache);
-            else node.outerHTML = outerHTMLCache;
-
-        }, 250);
-        return;
-    }
-
-    singleTranslate(node);
-}
-
-
 function bilingualTranslate(node: any, nodeOuterHTML: any) {
     if (detectlang(node.textContent.replace(/[\s\u3000]/g, '')) === config.to) return;
 
@@ -346,36 +311,6 @@ function bilingualTranslate(node: any, nodeOuterHTML: any) {
         });
 }
 
-
-export function singleTranslate(node: any) {
-    if (detectlang(node.textContent.replace(/[\s\u3000]/g, '')) === config.to) return;
-
-    let origin = servicesType.isMachine(config.service) ? node.innerHTML : LLMStandardHTML(node);
-    let spinner = insertLoadingSpinner(node);
-    
-    // 使用队列管理的翻译API
-    translateText(origin, document.title)
-        .then((text: string) => {
-            spinner.remove();
-            
-            text = beautyHTML(text);
-            
-            if (!text || origin === text) return;
-            
-            let oldOuterHtml = node.outerHTML;
-            node.innerHTML = text;
-            let newOuterHtml = node.outerHTML;
-            
-            // 缓存翻译结果
-            cache.localSetDual(oldOuterHtml, newOuterHtml);
-            cache.set(htmlSet, newOuterHtml, 250);
-            htmlSet.delete(oldOuterHtml);
-        })
-        .catch((error: Error) => {
-            spinner.remove();
-            insertFailedTip(node, error.toString() || "翻译失败", spinner);
-        });
-}
 
 export const handleBtnTranslation = throttle((node: any) => {
     let origin = node.innerText;
