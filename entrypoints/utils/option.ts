@@ -34,6 +34,8 @@ export const services = {
     openrouter: "openrouter", // openrouter
     grok: "grok", // X.AI 的 Grok
     newapi: "newapi", // New API 接口
+    opencodeZen: "opencodeZen", // OpenCode Zen（免费额度）
+    opencodeGo: "opencodeGo", // OpenCode Go（低成本订阅）
     chromeTranslator: "chromeTranslator", // Chrome 内置翻译 API
 };
 
@@ -63,6 +65,8 @@ export const servicesType = {
         services.doubao,
         services.siliconCloud,
         services.openrouter,
+        services.opencodeZen,
+        services.opencodeGo,
         services.grok,
         services.newapi,
     ]),
@@ -92,6 +96,8 @@ export const servicesType = {
         services.doubao,
         services.siliconCloud,
         services.openrouter,
+        services.opencodeZen,
+        services.opencodeGo,
         services.grok,
         services.newapi,
     ]),
@@ -118,6 +124,8 @@ export const servicesType = {
         services.doubao,
         services.siliconCloud,
         services.openrouter,
+        services.opencodeZen,
+        services.opencodeGo,
         services.grok,
         services.newapi,
     ]),
@@ -147,6 +155,8 @@ export const servicesType = {
         services.doubao,
         services.siliconCloud,
         services.openrouter,
+        services.opencodeZen,
+        services.opencodeGo,
         services.grok,
     ]),
     // 支持自定义 URL 的服务
@@ -201,7 +211,9 @@ export const models = new Map<string, Array<string>>([
         "Qwen/Qwen2.5-7B-Instruct", "internlm/internlm2_5-7b-chat", "THUDM/glm-4-9b-chat", customModelString]],
 
     [services.groq, ["llama-3.1-8b-instant", "llama3-8b-8192", "llama-3.3-70b-versatile", "gemma2-9b-it", "mixtral-8x7b-32768", "whisper-large-v3", customModelString]],
-    [services.openrouter, ["meta-llama/llama-3.1-8b-instruct", "google/gemini-2.0-flash-exp", "qwen/qwen-2-7b-instruct", "huggingfaceh4/zephyr-7b-beta", customModelString]]
+    [services.openrouter, ["meta-llama/llama-3.1-8b-instruct", "google/gemini-2.0-flash-exp", "qwen/qwen-2-7b-instruct", "huggingfaceh4/zephyr-7b-beta", customModelString]],
+    [services.opencodeZen, ["deepseek-v4-flash", "deepseek-v4-pro", "glm-5.3-flash", "glm-5.3", "kimi-k3", "kimi-k2.7-code", "minimax-m3", "deepseek-v4-flash-free", "muse-spark-1.3-contributor-free", customModelString]],
+    [services.opencodeGo, ["deepseek-v4.1-flash", "deepseek-v4-pro", "deepseek-v4-flash", "glm-5.3-flash", "glm-5.3", "glm-5.2", "kimi-k3", "kimi-k2.7-code", "kimi-k2.6", "longcat-2.0", "mimo-v2.5", customModelString]]
 ]);
 
 export const options = {
@@ -276,6 +288,8 @@ export const options = {
         {value: services.doubao, label: "字节豆包"},
         {value: services.grok, label: "Grok (X.AI)"},
         {value: services.openrouter, label: "OpenRouter"},
+        {value: services.opencodeZen, label: "OpenCode Zen（免费）⭐️"},
+        {value: services.opencodeGo, label: "OpenCode Go（低成本）⭐️"},
         {value: services.groq, label: "Groq"},
         {value: services.moonshot, label: "Kimi"},
         {value: services.zhipu, label: "智谱清言"},
