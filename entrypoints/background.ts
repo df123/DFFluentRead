@@ -126,6 +126,11 @@ export default defineBackground({
                     // 处理普通翻译请求
                     const startTime = Date.now();
                     const capturedRequest = _lastRequestBody;
+                    // 服务未配置或已下线时兜底，不发请求
+                    if (!_service[config.service]) {
+                        reject(new Error('翻译服务尚未配置'));
+                        return;
+                    }
                     _service[config.service](message)
                         .then(resp => {
                             debugLogger.store({

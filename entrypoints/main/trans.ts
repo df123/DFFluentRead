@@ -1,4 +1,4 @@
-import { checkConfig, searchClassName, skipNode } from "../utils/check";
+import { checkConfig, checkServiceReady, searchClassName, skipNode } from "../utils/check";
 import { cache } from "../utils/cache";
 import { options, servicesType } from "../utils/option";
 import { insertFailedTip, insertLoadingSpinner } from "../utils/icon";
@@ -81,6 +81,9 @@ export function restoreOriginalContent() {
 export function autoTranslateEnglishPage() {
     // 如果已经在翻译中，则返回
     if (isAutoTranslating) return;
+
+    // 服务未配置时直接拦截，不启动翻译（sendErrorMessage 有 1 秒节流，整页只弹一次）
+    if (!checkServiceReady()) return;
     
     // 获取当前页面的语言（暂时注释，存在识别问题）
     // const text = document.documentElement.innerText || '';

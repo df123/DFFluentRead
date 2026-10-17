@@ -2,10 +2,13 @@ import { customModelString, services, servicesType } from "./option";
 import { sendErrorMessage } from "./tip";
 import { config } from "@/entrypoints/utils/config";
 
-// Check configuration before translation
-export function checkConfig(): boolean {
-    // 1. Check if the plugin is enabled
-    if (!config.on) return false;
+// 检查翻译服务是否就绪（不检查 config.on，供非悬浮入口使用）
+export function checkServiceReady(): boolean {
+    // 0. 服务必须已选择且有效
+    if (!servicesType.isValid(config.service)) {
+        sendErrorMessage("翻译服务尚未配置，请前往设置页选择翻译服务并填写 API Key");
+        return false;
+    }
 
     // 2. Check if the token is provided for services that require it
     if (servicesType.isUseToken(config.service) && !config.token[config.service]) {
@@ -35,6 +38,15 @@ export function checkConfig(): boolean {
     }
 
     return true;
+}
+
+// Check configuration before translation
+export function checkConfig(): boolean {
+    // 1. Check if the plugin is enabled
+    if (!config.on) return false;
+
+    // 2. 服务就绪检查（服务选择、令牌、密钥、模型）
+    return checkServiceReady();
 }
 
 // Check if the node needs to be translated

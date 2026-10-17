@@ -1,4 +1,5 @@
 import { Config } from "@/entrypoints/utils/model";
+import { servicesType } from "@/entrypoints/utils/option";
 
 // 声明 config 类型, new Config() 会设置好所有默认值
 export let config: Config = new Config();
@@ -13,6 +14,13 @@ function isConfigObjectValid(obj: any): obj is Config {
     return 'on' in obj && 'service' in obj && 'from' in obj && 'to' in obj;
 }
 
+// 将旧配置中已失效的翻译服务（如已移除的机器翻译）重置为空，只改内存，持久化依赖已有写回逻辑
+export function normalizeConfig(obj: any) {
+    if (!servicesType.isValid(obj.service)) {
+        obj.service = "";
+    }
+}
+
 // 异步加载配置并应用
 async function loadConfig() {
     try {
@@ -22,6 +30,7 @@ async function loadConfig() {
             if (isConfigObjectValid(parsedConfig)) {
                 // 如果配置有效，合并到当前 config 中
                 Object.assign(config, parsedConfig);
+                normalizeConfig(config);
                 return; // 加载成功，直接返回
             }
         }
@@ -46,6 +55,7 @@ storage.watch('local:config', (newValue: any, oldValue: any) => {
             if (isConfigObjectValid(parsedConfig)) {
                 // 如果新的配置有效，更新 config
                 Object.assign(config, parsedConfig);
+                normalizeConfig(config);
             } else {
                 console.warn('An invalid configuration was detected in storage.watch. Ignoring.');
             }

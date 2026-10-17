@@ -4,6 +4,7 @@ import "element-plus/es/components/message/style/css";
 import {
   handleBilingualTranslation,
 } from "@/entrypoints/main/trans";
+import { checkServiceReady } from "@/entrypoints/utils/check";
 import { config } from "@/entrypoints/utils/config";
 import { services, options } from "./option";
 
@@ -57,6 +58,9 @@ function handleRetryClick(node: HTMLElement, wrapper: HTMLElement) {
   return (event: MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
+
+    // 服务未配置时不重试，保留失败标记
+    if (!checkServiceReady()) return;
 
     wrapper.remove(); // 移除错误提示元素，重新翻译
     node.classList.remove("fluent-read-failure"); // 移除失败标记

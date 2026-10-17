@@ -616,6 +616,7 @@
 import { computed, ref, watch, onUnmounted } from 'vue'
 import { models, options, servicesType, defaultOption } from "../entrypoints/utils/option";
 import { Config } from "@/entrypoints/utils/model";
+import { normalizeConfig } from '@/entrypoints/utils/config';
 import { storage } from '@wxt-dev/storage';
 import { ChatDotRound, Refresh, Edit, Upload, Download } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox, ElInputNumber } from 'element-plus'
@@ -649,6 +650,7 @@ storage.getItem('local:config').then((value: any) => {
   if (typeof value === 'string' && value) {
     const parsedConfig = JSON.parse(value);
     Object.assign(config.value, parsedConfig);
+    normalizeConfig(config.value);
   }
   // 初始应用主题
   updateTheme(config.value.theme || 'auto');
@@ -663,6 +665,7 @@ storage.watch('local:config', (newValue: any, oldValue: any) => {
     // 将新的配置值解析为对象,并合并到当前的 config.value 中
     // 这样可以保持所有页面的配置同步
     Object.assign(config.value, JSON.parse(newValue));
+    normalizeConfig(config.value);
   }
 });
 
@@ -1232,6 +1235,7 @@ const importConfig = async () => {
 
     // 应用新配置
     Object.assign(config.value, importedConfig);
+    normalizeConfig(config.value);
 
     // 保存到storage
     await storage.setItem('local:config', JSON.stringify(config.value));

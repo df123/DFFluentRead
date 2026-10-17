@@ -147,6 +147,8 @@ export const servicesType = {
         services.azureOpenai,
     ]),
 
+    // 服务是否已选择且有效（未选择/已下线的服务返回 false）
+    isValid: (service: string) => !!service && Object.values(services).includes(service),
     isAI: (service: string) => servicesType.AI.has(service),
     isUseToken: (service: string) => servicesType.useToken.has(service),
     isUseProxy: (service: string) => servicesType.useProxy.has(service),

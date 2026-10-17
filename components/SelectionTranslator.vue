@@ -96,6 +96,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { translateText } from '@/entrypoints/utils/translateApi';
 import { config } from '@/entrypoints/utils/config';
+import { checkServiceReady } from '@/entrypoints/utils/check';
 
 // 状态变量
 const selectedText = ref('');
@@ -276,7 +277,13 @@ const closeTooltip = () => {
 // 获取翻译结果
 const getTranslation = async () => {
   if (!selectedText.value) return;
-  
+
+  // 服务未配置时不发请求，在弹窗内提示
+  if (!checkServiceReady()) {
+    error.value = '翻译服务尚未配置，请前往设置页配置';
+    return;
+  }
+
   isLoading.value = true;
   error.value = '';
   
