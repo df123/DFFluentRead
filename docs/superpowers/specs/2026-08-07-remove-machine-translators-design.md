@@ -2,6 +2,7 @@
 
 日期：2026-08-07
 状态：已批准
+已被 docs/superpowers/plans/2026-10-17-remove-machine-translators-plan.md 取代（2026-10-17）
 
 ## 背景
 
