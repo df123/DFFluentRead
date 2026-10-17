@@ -1,12 +1,4 @@
 export const services = {
-    // 传统机器翻译
-    microsoft: "microsoft",
-    deepL: "deepL",
-    deeplx: "deeplx",
-    google: "google",
-    xiaoniu: "xiaoniu",
-    youdao: "youdao",
-    tencent: "tencent", // 腾讯云机器翻译
     // 大模型翻译
     openai: "openai",
     azureOpenai: "azureOpenai", // Azure OpenAI
@@ -36,12 +28,10 @@ export const services = {
     newapi: "newapi", // New API 接口
     opencodeZen: "opencodeZen", // OpenCode Zen（免费额度）
     opencodeGo: "opencodeGo", // OpenCode Go（低成本订阅）
-    chromeTranslator: "chromeTranslator", // Chrome 内置翻译 API
 };
 
 export const servicesType = {
     // 阵营划分
-    machine: new Set([services.microsoft, services.deepL, services.deeplx, services.google, services.xiaoniu, services.youdao, services.tencent, services.chromeTranslator,]),
     AI: new Set([
         services.openai,
         services.azureOpenai,
@@ -79,9 +69,6 @@ export const servicesType = {
         services.zhipu,
         services.moonshot,
         services.claude,
-        services.deepL,
-        services.deeplx,
-        services.xiaoniu,
         services.infini,
         services.baichuan,
         services.deepseek,
@@ -135,14 +122,8 @@ export const servicesType = {
         services.azureOpenai,
         services.gemini,
         services.claude,
-        services.google,
-        services.deepL,
-        services.deeplx,
         services.moonshot,
         services.tongyi,
-        services.xiaoniu,
-        services.youdao,
-        services.tencent,
         services.baichuan,
         services.deepseek,
         services.lingyi,
@@ -162,12 +143,10 @@ export const servicesType = {
     // 支持自定义 URL 的服务
     useCustomUrl: new Set([
         services.custom,
-        services.deeplx,
         services.newapi,
         services.azureOpenai,
     ]),
 
-    isMachine: (service: string) => servicesType.machine.has(service),
     isAI: (service: string) => servicesType.AI.has(service),
     isUseToken: (service: string) => servicesType.useToken.has(service),
     isUseProxy: (service: string) => servicesType.useProxy.has(service),
@@ -176,8 +155,7 @@ export const servicesType = {
     isNewApi: (service: string) => service === services.newapi,
     isUseAkSk: (service: string) => service === services.yiyan,
     isCoze: (service: string) => service === services.cozecom || service === services.cozecn,
-    isYoudao: (service: string) => service === services.youdao,
-    isTencent: (service: string) => service === services.tencent || service === services.huanYuanTranslation,
+    isTencent: (service: string) => service === services.huanYuanTranslation,
     isAzureOpenai: (service: string) => service === services.azureOpenai,
     isUseCustomUrl: (service: string) => servicesType.useCustomUrl.has(service),
 };
@@ -265,18 +243,8 @@ export const options = {
         {value: "custom", label: "自定义快捷键（测试版）"},
     ],
     services: [
-        // 传统机器翻译
-        {value: "machine", label: "机器翻译", disabled: true},
-        {value: services.microsoft, label: "微软翻译"},
-        {value: services.google, label: "谷歌翻译"},
-        {value: services.deepL, label: "DeepL"},
-        {value: services.deeplx, label: "DeepLX"},
-        {value: services.xiaoniu, label: "小牛翻译"},
-        {value: services.youdao, label: "有道翻译"},
-        {value: services.tencent, label: "腾讯云翻译"},
         // 大模型翻译
         {value: "ai", label: "AI翻译", disabled: true},
-        {value: services.chromeTranslator, label: "Chrome内置AI翻译⭐"},
         {value: services.siliconCloud, label: "硅基流动⭐️"},
         {value: services.huanYuan, label: "腾讯混元⭐"},
         {value: services.newapi, label: "New API"},
@@ -376,26 +344,6 @@ export const options = {
         {value: "light", label: "亮色主题"},
         {value: "dark", label: "暗色主题"},
     ],
-    // 输入框翻译目标语言选项
-    inputBoxTranslationTarget: [
-        {value: "zh-Hans", label: "中文"},
-        {value: "en", label: "英语"},
-        {value: "ja", label: "日语"},
-        {value: "ko", label: "韩语"},
-        {value: "fr", label: "法语"},
-        {value: "ru", label: "俄语"},
-        {value: "es", label: "西班牙语"},
-        {value: "de", label: "德语"},
-        {value: "pt", label: "葡萄牙语"},
-        {value: "it", label: "意大利语"},
-    ],
-    // 输入框翻译触发方式选项
-    inputBoxTranslationTrigger: [
-        {value: "disabled", label: "关闭"},
-        {value: "triple_space", label: "连按三下空格"},
-        {value: "triple_equal", label: "连按三下等号(=)"},
-        {value: "triple_dash", label: "连按三下短横线(-)"},
-    ]
 };
 
 export const defaultOption = {
@@ -404,9 +352,8 @@ export const defaultOption = {
     to: "zh-Hans",
     style: 1,
     hotkey: "Control",
-    service: services.microsoft,
+    service: "", // 不预设默认服务，未配置时不翻译（D4.1 提前至 WP3）
     custom: "http://localhost:11434/v1/chat/completions",
-    deeplx: "http://localhost:1188/translate",
     system_role:
         "You are a professional, authentic machine translation engine.",
     user_role: `Translate the following text into {{to}}, If translation is unnecessary (e.g. proper nouns, codes, etc.), return the original text. NO explanations. NO notes:
@@ -415,8 +362,6 @@ export const defaultOption = {
     count: 0,
     useCache: true,
     floatingBallHotkey: "Alt+T", // 默认悬浮球快捷键
-    inputBoxTranslationTrigger: "disabled", // 默认关闭输入框翻译
-    inputBoxTranslationTarget: "en", // 默认翻译成英文
     batchTranslationEnabled: true, // 默认开启批量翻译
     batchTranslationSize: 3000, // 默认每批3000字符
 };

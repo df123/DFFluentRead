@@ -39,7 +39,7 @@
     <!-- 翻译服务 -->
     <el-row class="margin-bottom margin-left-2em">
       <el-col :span="12" class="lightblue rounded-corner">
-        <el-tooltip class="box-item" effect="dark" content="机器翻译：快速稳定，适合日常使用；AI翻译：更自然流畅，需要配置令牌" placement="top-start"
+        <el-tooltip class="box-item" effect="dark" content="选择大模型翻译服务，并填写对应的 API Key（令牌）；未配置时不会翻译" placement="top-start"
           :show-after="500">
           <span class="popup-text popup-vertical-left">翻译服务<el-icon class="icon-margin">
               <ChatDotRound />
@@ -215,20 +215,6 @@
       </el-col>
     </el-row>
 
-    <!-- DeepLX URL 配置-->
-    <el-row v-show="compute.showDeepLX" class="margin-bottom margin-left-2em">
-      <el-col :span="12" class="lightblue rounded-corner">
-        <el-tooltip class="box-item" effect="dark"
-          content="DeepLX API 服务地址，默认为本地地址。如果使用远程 DeepLX 服务，请修改为对应的服务地址" placement="top-start"
-          :show-after="500">
-          <span class="popup-text popup-vertical-left">服务地址</span>
-        </el-tooltip>
-      </el-col>
-      <el-col :span="12">
-        <el-input v-model="config.deeplx" placeholder="http://localhost:1188/translate" />
-      </el-col>
-    </el-row>
-
     <!-- 使用AkSk -->
     <el-row v-show="compute.showAkSk" class="margin-bottom margin-left-2em">
       <el-col :span="12" class="lightblue rounded-corner">
@@ -257,38 +243,10 @@
       </el-col>
     </el-row>
 
-    <!-- 有道翻译配置 -->
-    <el-row v-show="compute.showYoudao" class="margin-bottom margin-left-2em">
-      <el-col :span="12" class="lightblue rounded-corner">
-        <el-tooltip class="box-item" effect="dark" content="有道智云翻译API应用ID，用于访问有道翻译服务。可在有道智云控制台获取" placement="top-start"
-          :show-after="500">
-          <span class="popup-text popup-vertical-left">App Key<el-icon class="icon-margin">
-              <ChatDotRound />
-            </el-icon></span>
-        </el-tooltip>
-      </el-col>
-      <el-col :span="12">
-        <el-input v-model="config.youdaoAppKey" placeholder="有道 AppKey" />
-      </el-col>
-    </el-row>
-    <el-row v-show="compute.showYoudao" class="margin-bottom margin-left-2em">
-      <el-col :span="12" class="lightblue rounded-corner">
-        <el-tooltip class="box-item" effect="dark" content="有道智云翻译API应用密钥，用于访问有道翻译服务。可在有道智云控制台获取" placement="top-start"
-          :show-after="500">
-          <span class="popup-text popup-vertical-left">App Secret<el-icon class="icon-margin">
-              <ChatDotRound />
-            </el-icon></span>
-        </el-tooltip>
-      </el-col>
-      <el-col :span="12">
-        <el-input v-model="config.youdaoAppSecret" type="password" show-password placeholder="有道 AppSecret" />
-      </el-col>
-    </el-row>
-
-    <!-- 腾讯云机器翻译配置 -->
+    <!-- 腾讯混元翻译密钥配置 -->
     <el-row v-show="compute.showTencent" class="margin-bottom margin-left-2em">
       <el-col :span="12" class="lightblue rounded-corner">
-        <el-tooltip class="box-item" effect="dark" content="腾讯云API访问密钥ID，用于访问腾讯云机器翻译服务。可在腾讯云控制台的访问管理中获取" placement="top-start"
+        <el-tooltip class="box-item" effect="dark" content="腾讯云API访问密钥ID，用于访问腾讯混元翻译服务。可在腾讯云控制台的访问管理中获取" placement="top-start"
           :show-after="500">
           <span class="popup-text popup-vertical-left">Secret ID<el-icon class="icon-margin">
               <ChatDotRound />
@@ -301,7 +259,7 @@
     </el-row>
     <el-row v-show="compute.showTencent" class="margin-bottom margin-left-2em">
       <el-col :span="12" class="lightblue rounded-corner">
-        <el-tooltip class="box-item" effect="dark" content="腾讯云API访问密钥，用于访问腾讯云机器翻译服务。可在腾讯云控制台的访问管理中获取" placement="top-start"
+        <el-tooltip class="box-item" effect="dark" content="腾讯云API访问密钥，用于访问腾讯混元翻译服务。可在腾讯云控制台的访问管理中获取" placement="top-start"
           :show-after="500">
           <span class="popup-text popup-vertical-left">Secret Key<el-icon class="icon-margin">
               <ChatDotRound />
@@ -469,25 +427,6 @@
           </el-col>
         </el-row>
 
-        <!-- 输入框翻译功能 -->
-        <el-row class="margin-bottom margin-left-2em">
-          <el-col :span="12" class="lightblue rounded-corner">
-            <el-tooltip class="box-item" effect="dark"
-                        content="输入框翻译：在任何文本输入框中使用指定方式触发翻译当前输入的内容。"
-                        placement="top-start" :show-after="500">
-              <span class="popup-text popup-vertical-left">输入框翻译<el-icon class="icon-margin">
-                  <ChatDotRound />
-                </el-icon></span>
-            </el-tooltip>
-          </el-col>
-          <el-col :span="12">
-            <el-select v-model="config.inputBoxTranslationTrigger" placeholder="请选择触发方式">
-              <el-option class="select-left" v-for="item in options.inputBoxTranslationTrigger" :key="item.value" 
-                         :label="item.label" :value="item.value" />
-            </el-select>
-          </el-col>
-        </el-row>
-
         <!-- 批量翻译设置 -->
         <el-row class="margin-bottom margin-left-2em">
           <el-col :span="20" class="lightblue rounded-corner">
@@ -522,19 +461,6 @@
                 controls-position="right"
             />
             <div class="input-hint">建议范围：1024-32768字符</div>
-          </el-col>
-        </el-row>
-
-        <!-- 输入框翻译目标语言 -->
-        <el-row v-if="config.inputBoxTranslationTrigger !== 'disabled'" class="margin-bottom margin-left-2em">
-          <el-col :span="12" class="lightblue rounded-corner">
-            <span class="popup-text popup-vertical-left">翻译目标语言</span>
-          </el-col>
-          <el-col :span="12">
-            <el-select v-model="config.inputBoxTranslationTarget" placeholder="请选择目标语言">
-              <el-option class="select-left" v-for="item in options.inputBoxTranslationTarget" :key="item.value" 
-                         :label="item.label" :value="item.value" />
-            </el-select>
           </el-col>
         </el-row>
 
@@ -752,8 +678,6 @@ watch(config, (newValue: any, oldValue: any) => {
 let compute = ref({
   // 1、是否是AI服务
   showAI: computed(() => servicesType.isAI(config.value.service)),
-  // 2、是否是机器翻译
-  showMachine: computed(() => servicesType.isMachine(config.value.service)),
   // 3、是否显示代理
   showProxy: computed(() => servicesType.isUseProxy(config.value.service)),
   // 4、是否显示模型
@@ -762,16 +686,12 @@ let compute = ref({
   showToken: computed(() => servicesType.isUseToken(config.value.service)),
   // 6、是否显示 AkSk
   showAkSk: computed(() => servicesType.isUseAkSk(config.value.service)),
-  // 6.5、是否显示有道翻译配置
-  showYoudao: computed(() => servicesType.isYoudao(config.value.service)),
-  // 6.6、是否显示腾讯云机器翻译配置
+  // 6.6、是否显示腾讯混元翻译密钥配置
   showTencent: computed(() => servicesType.isTencent(config.value.service)),
   // 7、获取模型列表
   model: computed(() => models.get(config.value.service) || []),
   // 8、是否需要自定义接口
   showCustom: computed(() => servicesType.isCustom(config.value.service)),
-  // 9、是否显示 DeepLX URL 配置
-  showDeepLX: computed(() => config.value.service === 'deeplx'),
   // 10、是否自定义模型
   showCustomModel: computed(() => servicesType.isAI(config.value.service) && config.value.model[config.value.service] === "自定义模型"),
   // 11、判断是否为 coze

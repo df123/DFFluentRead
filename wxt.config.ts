@@ -33,7 +33,7 @@ export default defineConfig({
         }
     }),
     manifest: {
-        permissions: ['storage', 'contextMenus', 'offscreen'],
+        permissions: ['storage', 'contextMenus'],
         browser_specific_settings: {
             gecko: {
                 data_collection_permissions: {

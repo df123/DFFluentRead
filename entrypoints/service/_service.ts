@@ -1,16 +1,9 @@
 import {services} from "../utils/option";
-import microsoft from "./microsoft";
-import deepl from "./deepl";
-import deeplx from "./deeplx";
 import custom from "./custom";
 import tongyi from "./tongyi";
 import zhipu from "./zhipu";
 import yiyan from "./yiyan";
 import gemini from "./gemini";
-import google from "./google";
-import xiaoniu from "./xiaoniu";
-import youdao from "./youdao";
-import tencent from "./tencent";
 import claude from "./claude";
 import infini from "@/entrypoints/service/infini";
 import minimax from "@/entrypoints/service/minimax";
@@ -19,23 +12,12 @@ import coze from "@/entrypoints/service/coze";
 import deepseek from "./deepseek";
 import newapi from "./newapi";
 import azureOpenai from "./azure-openai";
-import chromeTranslator from "./chrome-translator";
 import hunyuanTranslation from "./hunyuan-translation";
 
 type ServiceFunction = (message: any) => Promise<any>;
 type ServiceMap = {[key: string]: ServiceFunction;};
 
 export const _service: ServiceMap = {
-    // 传统机器翻译
-    [services.microsoft]: microsoft,
-    [services.deepL]: deepl,
-    [services.deeplx]: deeplx,
-    [services.google]: google,
-    [services.xiaoniu]: xiaoniu,
-    [services.youdao]: youdao,
-    [services.tencent]: tencent,
-    [services.chromeTranslator]: chromeTranslator,
-
     // 大模型翻译
     [services.custom]: custom,
     [services.tongyi]: tongyi,

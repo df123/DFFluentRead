@@ -308,6 +308,11 @@
 - 高级选项里没有输入框翻译的设置。
 - 在输入框里连按三下空格，不触发任何翻译。
 
+### 执行偏离（2026-10-17，pi code agent）
+
+- **D4.1 提前至 WP3**：计划要求 defaultOption 的 `service` 字段留到 WP4 处理，但 WP3 删除 `services.microsoft` 键后，`service: services.microsoft` 成为悬空引用，会产生基线以外的新 compile 错误（TS2339），违反“错误数=基线”自检。故在 WP3 直接改为 `service: ""`，WP4 无需再改此处。
+- 小额补充：Main.vue computed 中 showTencent 的注释“是否显示腾讯云机器翻译配置”同步改为“是否显示腾讯混元翻译密钥配置”（“腾讯云机器翻译”服务已不存在，避免误导）。代码不变。
+
 ### 验收
 - 提交：`refactor: 移除传统机器翻译服务、offscreen 和输入框翻译`。
 

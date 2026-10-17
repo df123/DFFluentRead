@@ -9,12 +9,8 @@ export function checkConfig(): boolean {
 
     // 2. Check if the token is provided for services that require it
     if (servicesType.isUseToken(config.service) && !config.token[config.service]) {
-        // DeepLX 的令牌是可选的，不需要强制检查
-        if (config.service === services.deeplx) {
-        } else {
-            sendErrorMessage("令牌尚未配置，请前往设置页配置");
-            return false;
-        }
+        sendErrorMessage("令牌尚未配置，请前往设置页配置");
+        return false;
     }
     // Special case for YiYan service (requires both AK and SK)
     if (config.service === services.yiyan && (!config.ak || !config.sk)) {
@@ -22,9 +18,9 @@ export function checkConfig(): boolean {
         return false;
     }
     
-    // Special case for Tencent Cloud service (requires both SecretId and SecretKey)
-    if (config.service === services.tencent && (!config.tencentSecretId || !config.tencentSecretKey)) {
-        sendErrorMessage("腾讯云机器翻译密钥尚未配置，请前往设置页配置SecretId和SecretKey");
+    // Special case for Tencent Hunyuan Translation service (requires both SecretId and SecretKey)
+    if (config.service === services.huanYuanTranslation && (!config.tencentSecretId || !config.tencentSecretKey)) {
+        sendErrorMessage("腾讯混元翻译密钥尚未配置，请前往设置页配置SecretId和SecretKey");
         return false;
     }
 
