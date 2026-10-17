@@ -1348,7 +1348,7 @@ const validateConfig = (configData: any): boolean => {
     }
 
     // 检查必要的配置字段
-    const requiredFields = ['on', 'service', 'display', 'from', 'to'];
+    const requiredFields = ['on', 'service', 'from', 'to'];
     for (const field of requiredFields) {
       if (!(field in configData)) {
         return false;

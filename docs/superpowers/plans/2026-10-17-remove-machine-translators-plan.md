@@ -135,6 +135,21 @@
 ### 集成 / 流程验证（留给 /agent-verify）
 - popup → 高级选项 → 导入配置，粘贴不含 `display` 的配置，弹出“配置导入成功”。
 
+### 执行记录（2026-10-17 22:08，pi code agent）
+
+- `pnpm compile` 基线：**10 个错误**（9-18 记录的“3 处存量”已过期，以本次实测为准）。完整清单（文件:行 + 错误码）：
+  1. `entrypoints/offscreen/main.ts(214,1)` TS2304: Cannot find name 'chrome'
+  2. `entrypoints/offscreen/main.ts(214,39)` TS7006: Parameter 'message' implicitly has an 'any' type
+  3. `entrypoints/offscreen/main.ts(214,48)` TS7006: Parameter 'sender' implicitly has an 'any' type
+  4. `entrypoints/offscreen/main.ts(214,56)` TS7006: Parameter 'sendResponse' implicitly has an 'any' type
+  5. `entrypoints/service/chrome-translator.ts(18,13)` TS2304: Cannot find name 'chrome'
+  6. `entrypoints/service/chrome-translator.ts(26,21)` TS2304: Cannot find name 'chrome'
+  7. `entrypoints/service/chrome-translator.ts(27,38)` TS2304: Cannot find name 'chrome'
+  8. `entrypoints/service/chrome-translator.ts(55,40)` TS2304: Cannot find name 'chrome'
+  9. `entrypoints/service/chrome-translator.ts(64,15)` TS2304: Cannot find name 'chrome'
+  10. `wxt.config.ts(29,5)` TS2322（vite 5.4.11/5.4.19 双版本类型不匹配，存量，不在本次范围）
+- 后续 WP 按此清单逐条比对：前 9 处所在的 offscreen、chrome-translator 会在 WP3 删除（错误数下降属预期），不得出现清单以外的新错误。
+
 ### 验收
 - 提交：`fix: 配置导入校验去掉已删除的 display 必填字段`。
 
