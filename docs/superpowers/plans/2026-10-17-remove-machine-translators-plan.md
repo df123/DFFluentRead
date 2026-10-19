@@ -579,3 +579,27 @@ entrypoints/utils/template.ts
 1. 以后每次计划做完是否都可以直接 push（目前只当本计划同意）。
 2. AMO 打包上传和源码提交由谁做。
 3. `README.md:15` 是否在本计划里改（默认等发布时再改）。
+
+---
+
+## 执行复核（2026-10-17 22:23 核对，2026-10-19 补记，Claude Code）
+
+- 结论：WP0–WP6 全部完成，与计划一致。偏离两处（D4.1 提前到 WP3、showTencent 注释），都合理，已记在 WP3 的“执行偏离”。
+- 只读核对：
+  - 提交 f159a9b、dc58ca0、12d9952、66ae5ba、a3a68be、e269fd7，从 897d37d 快进推送到 origin，没有 force；
+  - 残留 grep（WP3 pattern）为空；
+  - services 27 个键、_service 映射 27 个、下拉 28 项（含“AI翻译”分隔项）、opencode 18 处；
+  - chrome-mv3 和 firefox-mv2 的 manifest permissions 都是 ['storage','contextMenus']；
+  - .test-shots/ 已删除；补丁备份 71863 字节。
+- 勘误（计划原文写错了，以这里为准）：
+  1. §1.1 “删掉 23 个 LLM 服务中的 21 个”应为：基线 6a9f69c 共有 25 个 LLM 服务，9-18 删掉其中 23 个（保留 deepseek、openrouter）。本计划恢复的就是这 23 个，加上 OpenCode Zen/Go，现在共 27 个服务。
+  2. WP3 集成 / 流程验证里的“‘AI翻译’下列出 23 + 2 个服务”应为 25 + 2 = 27 个（下拉共 28 项，含“AI翻译”分隔项）。
+  3. compile 基线以 WP1“执行记录”（10 处）为准；现在剩 1 处存量错误：wxt.config.ts(29,5) TS2322。
+- 附录 D 待确认事项的答复（用户 2026-10-19）：
+  1. 以后每次计划做完是否直接 push → “是的”（只推 origin 上的 feature 分支，不 force）。
+  2. AMO 打包上传和源码提交由谁做 → “由我”（用户本人）。
+  3. README.md:15 何时更新 → “按照建议”，发布前再改。
+- 留给 /agent-verify：
+  - WP1–WP4 的“集成 / 流程验证”各项，用新的 Chrome profile 做，不要动 ~/chrome-debug-profile；
+  - 在 Firefox 里手动验证（pnpm dev:firefox:wsl）；
+  - 预期行为说明：划词翻译未配置时，会同时出现 ElMessage 提示和弹窗内的错误文案，这是预期的。
