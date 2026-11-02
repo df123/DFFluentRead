@@ -16,6 +16,16 @@ const REDDIT_RTJSON_CONTENT_SELECTOR = '[id$="-post-rtjson-content"], [id$="-com
 // 匹配到这些标签时，让它们走 directSet 分支被独立翻译，从而保持分段结构
 const REDDIT_BLOCK_TAGS = new Set(['p', 'li', 'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6']);
 
+// Reddit 帖子/评论署名行（byline）模式
+// 形如 "r/aviation • 15h ago"、"u/xxx • 3h"、"r/xxx • u/yyy • 2d ago"
+// 由 r/xxx 或 u/xxx 开头，后接 "•" 分隔的短元信息（另一个名称、相对时间、OP/MOD 等）。
+// 名称是专有名词不应翻译；若整体送译，译文会重复 "r/xxx •" 前缀，放原文后面更加双倍啰嗦。
+// 注意：分隔符后的内容可为空（Reddit 异步渲染 timeago，收集时可能只有 "r/xxx •"）。
+const REDDIT_BYLINE_PATTERN = /^[ru]\/[\w-]+(?:\s*[•·|›–—,]\s*(?:[ru]\/[\w-]+|OP|MOD|(?:edited\s+)?(?:\d+(?:\.\d+)?\s*(?:s|m|min|h|hr|d|w|mo|y)\.?|an?\s+(?:second|minute|hour|day|week|month|year)s?|\d+\s+(?:second|minute|hour|day|week|month|year)s?)(?:\s+ago)?\.?|just now)?)*\s*$/;
+
+// 旧版 Reddit 署名行："submitted 15 hours ago by u/xxx"（"by u/xxx" 结尾）
+const REDDIT_OLD_BYLINE_PATTERN = /^submitted\b.*\bby\s+[ru]\/[\w-]+\s*$/;
+
 // 调试相关
 const isDev = process.env.NODE_ENV === 'development';
 
@@ -1490,6 +1500,19 @@ function shouldSkipRedditElement(node: any): boolean {
         // 社区名格式 r/community
         if (/^r\/\w+$/.test(textContent)) {
             debugLog('Reddit', '社区名格式跳过', textContent);
+            return true;
+        }
+        
+        // 帖子/评论署名行（"r/xxx • 15h ago" 等）：名称是专有名词，
+        // 整体跳过，避免译文重复 "r/xxx •" 前缀
+        if (REDDIT_BYLINE_PATTERN.test(textContent)) {
+            debugLog('Reddit', '署名行跳过', textContent);
+            return true;
+        }
+        
+        // 旧版 Reddit 署名行（"submitted ... by u/xxx"）
+        if (REDDIT_OLD_BYLINE_PATTERN.test(textContent)) {
+            debugLog('Reddit', '旧版署名行跳过', textContent);
             return true;
         }
         

@@ -319,6 +319,12 @@ export class BatchTranslationManager {
       return;
     }
 
+    // LLM 有时会把原文（尤其 "r/xxx •" 这类短元信息）带空白格式原样回显；
+    // trim 后与原文一致的视为无翻译，不追加避免双语区出现重复文本。
+    if (translatedText.trim() === item.text) {
+      return;
+    }
+
     const node = item.node;
 
     node.classList.add('fluent-read-bilingual');
