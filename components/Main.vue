@@ -321,9 +321,14 @@
         <span class="popup-text popup-vertical-left">模型</span>
       </el-col>
       <el-col :span="12">
-        <el-select v-model="config.model[config.service]" placeholder="请选择模型">
-          <el-option class="select-left" v-for="item in compute.model" :key="item" :label="item" :value="item" />
-        </el-select>
+        <div class="model-select-row">
+          <el-select v-model="config.model[config.service]" placeholder="请选择模型">
+            <el-option class="select-left" v-for="item in compute.model" :key="item" :label="item" :value="item" />
+          </el-select>
+          <el-tooltip v-if="compute.canFetchModels" class="box-item" effect="dark" content="从 API 获取模型列表" placement="top" :show-after="500">
+            <el-button class="model-refresh-btn" :icon="Refresh" size="small" @click="fetchModels(true)" />
+          </el-tooltip>
+        </div>
       </el-col>
     </el-row>
 
@@ -614,7 +619,8 @@
 
 // Main 处理配置信息
 import { computed, ref, watch, onUnmounted } from 'vue'
-import { models, options, servicesType, defaultOption } from "../entrypoints/utils/option";
+import { models, options, servicesType, defaultOption, customModelString } from "../entrypoints/utils/option";
+import { modelUrls } from "../entrypoints/utils/constant";
 import { Config } from "@/entrypoints/utils/model";
 import { normalizeConfig } from '@/entrypoints/utils/config';
 import { storage } from '@wxt-dev/storage';
@@ -677,6 +683,51 @@ watch(config, (newValue: any, oldValue: any) => {
   storage.setItem('local:config', JSON.stringify(newValue));
 }, { deep: true });
 
+// 从 API 拉取的模型列表（service -> 模型数组）
+let fetchedModels = ref<Record<string, string[]>>({});
+
+// 计算模型列表接口地址：若配置了代理（转发整个 API），则由代理地址推导
+function resolveModelListUrl(service: string): string {
+    const proxy = config.value.proxy?.[service];
+    if (proxy && proxy.endsWith('/chat/completions')) {
+        return proxy.slice(0, -'/chat/completions'.length) + '/models';
+    }
+    return modelUrls[service];
+}
+
+// 从服务商 API 获取模型列表；manual 为 true 表示用户手动刷新，失败时给出提示
+async function fetchModels(manual: boolean) {
+    const service = config.value.service;
+    if (!modelUrls[service]) return;
+    const token = config.value.token?.[service];
+    if (!token) {
+        if (manual) ElMessage.warning('请先填写访问令牌（Token）');
+        return;
+    }
+    try {
+        const resp = await fetch(resolveModelListUrl(service), {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!resp.ok) {
+            throw new Error(`${resp.status} ${resp.statusText}`);
+        }
+        const result = await resp.json();
+        const list = [...new Set((result?.data || []).map((m: any) => m?.id).filter(Boolean))] as string[];
+        if (!list.length) throw new Error('接口未返回任何模型');
+        fetchedModels.value[service] = [...list, customModelString];
+        if (manual) ElMessage.success(`已获取 ${list.length} 个模型`);
+    } catch (error) {
+        console.error('获取模型列表失败:', error);
+        if (manual) ElMessage.error(`获取模型列表失败: ${error instanceof Error ? error.message : error}`);
+    }
+}
+
+// 服务切换、令牌或代理变化时自动拉取模型列表（失败时回退到内置列表）
+watch(() => [config.value.service,
+    config.value.token?.[config.value.service as string],
+    config.value.proxy?.[config.value.service as string]] as const,
+    () => fetchModels(false));
+
 // 计算属性
 let compute = ref({
   // 1、是否是AI服务
@@ -691,8 +742,8 @@ let compute = ref({
   showAkSk: computed(() => servicesType.isUseAkSk(config.value.service)),
   // 6.6、是否显示腾讯混元翻译密钥配置
   showTencent: computed(() => servicesType.isTencent(config.value.service)),
-  // 7、获取模型列表
-  model: computed(() => models.get(config.value.service) || []),
+  // 7、获取模型列表（优先用 API 拉取的列表，拉取失败时回退到内置列表）
+  model: computed(() => fetchedModels.value[config.value.service] || models.get(config.value.service) || []),
   // 8、是否需要自定义接口
   showCustom: computed(() => servicesType.isCustom(config.value.service)),
   // 10、是否自定义模型
@@ -703,6 +754,8 @@ let compute = ref({
   showNewAPI: computed(() => servicesType.isNewApi(config.value.service)),
   // 14、是否显示Azure OpenAI端点配置
   showAzureOpenaiEndpoint: computed(() => servicesType.isAzureOpenai(config.value.service)),
+  // 15、该服务是否支持从 API 获取模型列表
+  canFetchModels: computed(() => !!modelUrls[config.value.service]),
 })
 
 // 监听主题变化
@@ -1320,6 +1373,19 @@ const validateConfig = (configData: any): boolean => {
 
 .icon-margin {
   margin-left: 0.25em;
+}
+
+/* 模型下拉 + 手动刷新按钮 */
+.model-select-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.model-select-row :deep(.el-select) {
+  flex: 1;
+  width: auto;
+  min-width: 0;
 }
 
 /* 添加自适应样式 */

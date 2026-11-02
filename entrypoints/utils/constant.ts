@@ -30,6 +30,11 @@ export const urls: any = {
     // [services.baidu]: "https://fanyi-api.baidu.com/api/trans/vip/translate",
 }
 
+// 支持从 API 获取模型列表的服务（OpenAI 兼容的 GET /models 接口）
+export const modelUrls: any = {
+    [services.deepseek]: "https://api.deepseek.com/models",
+}
+
 export const method = {POST: "POST", GET: "GET",};
 
 export const constants = {
